@@ -1,7 +1,7 @@
 {
   "name": "pi-automem-core",
   "version": "0.1.0",
-  "description": "Automatic long-term memory recall for pi agents via AutoMem MCP",
+  "description": "Automatic long-term memory recall and policy-gated writes for pi agents via AutoMem MCP",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -9,7 +9,9 @@
     "mcp",
     "memory",
     "long-term-memory",
-    "semantic-memory"
+    "semantic-memory",
+    "memory-write-policy",
+    "agent-memory"
   ],
   "license": "MIT",
   "author": "pi-automem-core contributors",
@@ -22,7 +24,10 @@
     "typebox": "*"
   },
   "scripts": {
-    "test:phase1": "tsx tests/phase1-smoke.ts"
+    "test:phase1": "tsx tests/phase1-smoke.ts",
+    "test:phase2": "tsx tests/phase2-policy.ts",
+    "test": "npm run test:phase1 && npm run test:phase2",
+    "test:phase2:live": "tsx tests/phase2-live-write.ts"
   },
   "devDependencies": {
     "tsx": "^4.20.6"

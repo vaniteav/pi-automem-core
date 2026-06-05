@@ -17,6 +17,7 @@ import { detectProject } from "./project-detect";
 import { buildContextMessage } from "./context-injector";
 import { registerStatusCommand } from "./commands/status";
 import { registerRecallCommand } from "./commands/recall";
+import { registerMemoryTools } from "./tools/memory-tools";
 
 export default function (pi: ExtensionAPI) {
   let config = loadConfig();
@@ -26,9 +27,10 @@ export default function (pi: ExtensionAPI) {
   let startupInjected = false;
   let startupResult: RecallResult = { text: "", count: 0, truncated: false };
 
-  // Register commands
+  // Register commands and Phase 2 explicit write tools
   registerStatusCommand(pi);
   registerRecallCommand(pi);
+  registerMemoryTools(pi);
 
   // session_start - Load config, check health, run startup recall
   pi.on("session_start", async function(_event: any, ctx: any) {

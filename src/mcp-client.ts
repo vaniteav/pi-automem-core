@@ -308,3 +308,9 @@ export async function automemAssociate(
     strength,
   });
 }
+
+export async function automemDelete(memoryId: string): Promise<McpCallResult> {
+  return mcpCall(resolveToolName("delete_memory"), {
+    memory_id: memoryId,
+  });
+}

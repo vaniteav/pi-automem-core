@@ -11,6 +11,8 @@ Long-term semantic memory for pi via AutoMem MCP.
 
 - `/automem-status` — Show AutoMem health, memory count, and config summary
 - `/automem-recall <query>` — Manually query AutoMem (debugging)
+- `automem_propose_memory` — Validate/preview a durable memory candidate without writing
+- `automem_commit_memory` — Store a policy-approved memory after confirmation or safe-auto policy
 
 ## Config
 
@@ -28,8 +30,10 @@ The footer shows:
 - `● AutoMem (42)` — healthy, 42 memories
 - `● AutoMem (offline)` — unreachable
 
-## Phase 1 limitations
+## Write policy
 
-- Recall only — no automatic writes
-- No direct AutoMem tools are available to the model; use `/automem-recall <query>` for manual recall
-- If AutoMem is down, pi works normally with a warning
+Default mode is propose-first. Store only compact durable knowledge: decisions, preferences, patterns, insights, durable bug-fix lessons, and important context. Never store secrets, credentials, raw transcripts, or incidental chatter.
+
+Use `automem_propose_memory` before committing. Use `automem_commit_memory` only after explicit user approval unless config enables safe-auto for the exact low-risk category.
+
+If AutoMem is down, pi works normally with a warning.

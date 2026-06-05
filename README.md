@@ -8,8 +8,9 @@ Long-term semantic memory for [pi](https://pi.dev) agents via an AutoMem MCP ser
 - turn-level recall based on the current prompt and detected project
 - compact/hidden context injection so memory helps the model without cluttering chat
 - `/automem-status` and `/automem-recall` commands for debugging
+- explicit write tools that propose, scan, dedupe, and confirm before storing
 
-Phase 1 is recall-only. It does **not** write memories automatically.
+Current status: recall is automatic; memory writes are explicit and policy-gated. The default write mode is propose-first, not automatic.
 
 ## Requirements
 
@@ -106,6 +107,8 @@ Example:
 |---|---|
 | `/automem-status` | Show AutoMem health, memory count, and config summary |
 | `/automem-recall <query>` | Manually query AutoMem for debugging |
+| `automem_propose_memory` | Tool: validate and preview a memory candidate without writing |
+| `automem_commit_memory` | Tool: store a policy-approved memory after confirmation or safe-auto policy |
 
 ## Configuration reference
 
@@ -119,7 +122,7 @@ Important sections:
 | `startupRecall` | Queries, tags, tag mode, limits, and byte budget for session-start recall |
 | `turnRecall` | Limits, memory types, and relation/entity expansion for each prompt |
 | `projectDetection` | Optional folder, git, and prompt mappings to project tags |
-| `writePolicy` | Reserved for Phase 2 memory writes |
+| `writePolicy` | Write mode, safe/confirm/blocked categories, minimum importance, dedupe settings |
 | `vault` | Optional canonical-source metadata for users who maintain an external knowledge base |
 | `behavior` | Recall display mode and content-length preferences |
 
@@ -162,17 +165,42 @@ See `examples/config.minimal.json` and `examples/config.advanced.json` for templ
 
 - This package does not include user-specific configuration.
 - Secrets should live in environment variables or your local MCP configuration, not in this package.
-- Phase 1 is recall-only and does not write memories.
-- Future write features should include explicit write policies and secret scanning before use.
+- Write tools are explicit and policy-gated; default mode proposes rather than auto-writes.
+- Secret-like content, credentials, raw transcripts, blocked categories, and low-importance candidates are blocked before storage.
+- Use `automem_propose_memory` before committing a memory. Use `automem_commit_memory` only after explicit approval unless your local config enables safe-auto for that exact low-risk category.
+
+## Write policy example
+
+```json
+{
+  "writePolicy": {
+    "mode": "propose",
+    "autoWriteCategories": ["technical-decision", "agent-pattern", "bug-fix", "tooling-lesson"],
+    "confirmCategories": ["personal", "financial", "private", "identity"],
+    "blockedCategories": ["secret", "credential", "api-key", "raw-transcript"],
+    "minImportanceToWrite": 0.7,
+    "dedupeBeforeWrite": true
+  }
+}
+```
+
+Modes:
+
+| Mode | Behavior |
+|---|---|
+| `off` | Block all writes |
+| `propose` | Default. Propose candidates; require approval to commit |
+| `safe-auto` | Auto-write only configured low-risk categories; confirm risky categories |
+| `confirm-all` | Require confirmation for every write |
 
 ## Development
 
 ```bash
 npm install
-npm run test:phase1
+npm test
 ```
 
-`test:phase1` is a live smoke test. It requires a working AutoMem MCP server configured in your local pi MCP config.
+`test:phase1` is a live smoke test. It requires a working AutoMem MCP server configured in your local pi MCP config. `test:phase2` covers write policy, secret scanning, and tool registration without writing memories.
 
 ## Publishing checklist
 

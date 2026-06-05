@@ -64,6 +64,9 @@ async function runExtensionOnce(displayRecall: DisplayMode) {
     registerCommand() {
       // Commands are registered by extension startup; command behavior is covered separately.
     },
+    registerTool() {
+      // Phase 2 tools are covered by policy tests; ignore in Phase 1 harness.
+    },
   };
 
   extension(pi as any);

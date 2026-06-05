@@ -58,12 +58,16 @@ export interface AutoMemConfig {
     gitRepoToTag: Record<string, string>;
   };
   writePolicy: {
+    mode: "off" | "propose" | "safe-auto" | "confirm-all";
     autoWriteCategories: string[];
     confirmCategories: string[];
     blockedCategories: string[];
     defaultSource: string;
     machineTag: boolean;
     alwaysTag: string[];
+    minImportanceToWrite: number;
+    dedupeBeforeWrite: boolean;
+    dedupeLimit: number;
   };
   vault: {
     canonical: boolean;
@@ -113,12 +117,16 @@ export const DEFAULT_CONFIG: AutoMemConfig = {
     gitRepoToTag: {},
   },
   writePolicy: {
-    autoWriteCategories: ["decision", "pattern", "insight", "context"],
-    confirmCategories: ["career", "personal", "financial"],
-    blockedCategories: ["secret", "credential", "api-key"],
+    mode: "propose",
+    autoWriteCategories: ["technical-decision", "agent-pattern", "bug-fix", "tooling-lesson"],
+    confirmCategories: ["personal", "financial", "private", "identity"],
+    blockedCategories: ["secret", "credential", "api-key", "raw-transcript"],
     defaultSource: "pi-session",
     machineTag: true,
     alwaysTag: ["source:pi"],
+    minImportanceToWrite: 0.7,
+    dedupeBeforeWrite: true,
+    dedupeLimit: 3,
   },
   vault: {
     canonical: false,

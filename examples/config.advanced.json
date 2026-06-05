@@ -32,9 +32,14 @@
     }
   },
   "writePolicy": {
+    "mode": "propose",
+    "autoWriteCategories": ["technical-decision", "agent-pattern", "bug-fix", "tooling-lesson"],
+    "confirmCategories": ["personal", "financial", "private", "identity"],
+    "blockedCategories": ["secret", "credential", "api-key", "raw-transcript"],
     "alwaysTag": ["source:pi"],
-    "confirmCategories": ["personal", "financial", "private"],
-    "blockedCategories": ["secret", "credential", "api-key"]
+    "minImportanceToWrite": 0.7,
+    "dedupeBeforeWrite": true,
+    "dedupeLimit": 3
   },
   "vault": {
     "canonical": false

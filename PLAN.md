@@ -71,16 +71,25 @@ Exit criteria:
 
 ## Phase 2 — Curated writes
 
-Planned features:
+Status: initial implementation complete; broader UX/relevance tuning still needed before publishing.
 
-- Optional memory-write tool
-- Configurable write policy
-- Secret/credential scanning
-- Confirm-first categories
-- Blocked categories
-- Clear audit trail for writes
+Implemented features:
 
-Phase 2 must not auto-write sensitive or ambiguous content.
+- `automem_propose_memory` validates and previews candidates without writing.
+- `automem_commit_memory` stores policy-approved memories.
+- Configurable write modes: `off`, `propose`, `safe-auto`, `confirm-all`.
+- Secret/credential scanning blocks dangerous content before storage.
+- Confirm-first and blocked categories are configurable.
+- Dedupe recall checks for similar memories before storing.
+- `npm run test:phase2` covers policy behavior without writing.
+- `npm run test:phase2:live` writes a temporary memory, recalls it, and deletes it.
+
+Remaining before publish:
+
+- Tune candidate extraction/UX in real sessions.
+- Add relationship creation flow for correction/update cases.
+- Add update-vs-duplicate handling when dedupe finds a close match.
+- Decide whether any category should ever default to safe-auto for public users.
 
 ## Phase 3 — Relationships and consolidation
 

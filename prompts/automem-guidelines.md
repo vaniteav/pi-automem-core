@@ -9,11 +9,18 @@ AutoMem is pi's long-term semantic memory, available automatically in this sessi
 - The `/automem-status` command shows health and memory count.
 - The `/automem-recall <query>` command does manual recall for debugging.
 
-## Phase 1 behavior (recall-only)
+## Recall behavior
 
-- This extension **reads** from AutoMem automatically. It does **not** write memories on its own.
-- All recall is handled automatically — startup recall at session start and turn-level recall before each agent turn. There are no direct AutoMem tools available to call; use the `/automem-recall <query>` command for manual recall.
+- Startup recall runs at session start and turn-level recall runs before each agent turn.
+- Use `/automem-recall <query>` for manual recall/debugging.
 - If AutoMem is unreachable, pi works normally — the footer status indicator shows "AutoMem (offline)".
+
+## Write behavior
+
+- Do **not** write raw session transcripts, long summaries, or incidental chatter.
+- Use `automem_propose_memory` first for durable candidates. It validates type/tags/importance, scans for secrets, and checks for similar memories.
+- Use `automem_commit_memory` only after explicit user approval, unless local config uses a safe-auto policy for the exact category.
+- Good memory candidates are compact, intentional, and useful across sessions: decisions, preferences, repeated patterns, key insights, durable bug-fix lessons, and important project context.
 
 ## Memory types
 
