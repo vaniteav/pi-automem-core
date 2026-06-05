@@ -1,0 +1,47 @@
+{
+  "mcpServerName": "automem",
+  "startupRecall": {
+    "queries": [
+      "user preferences working style",
+      "agent operating guidelines",
+      "local development environment",
+      "active projects recent decisions"
+    ],
+    "tags": ["source:pi"],
+    "tagMode": "any",
+    "limit": 6,
+    "maxBytes": 5000
+  },
+  "turnRecall": {
+    "enabled": true,
+    "limit": 5,
+    "maxBytes": 3000,
+    "contextTypes": ["Preference", "Decision", "Pattern", "Insight", "Context"],
+    "expandRelations": true,
+    "expandEntities": true
+  },
+  "projectDetection": {
+    "tagPrefix": "project:",
+    "folderTags": {
+      "projects": ["project"],
+      "areas": ["area"],
+      "resources": ["resource"]
+    },
+    "gitRepoToTag": {
+      "my-project": "project:my-project"
+    }
+  },
+  "writePolicy": {
+    "alwaysTag": ["source:pi"],
+    "confirmCategories": ["personal", "financial", "private"],
+    "blockedCategories": ["secret", "credential", "api-key"]
+  },
+  "vault": {
+    "canonical": false
+  },
+  "behavior": {
+    "displayRecall": "hidden",
+    "maxContentLength": 2000,
+    "preferredContentLength": 500
+  }
+}

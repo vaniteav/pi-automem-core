@@ -1,0 +1,10 @@
+{
+  "mcpServerName": "automem",
+  "startupRecall": {
+    "queries": ["my preferences and working style"],
+    "limit": 5
+  },
+  "writePolicy": {
+    "alwaysTag": ["source:pi"]
+  }
+}

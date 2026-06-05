@@ -1,0 +1,55 @@
+{
+  "name": "pi-automem-core",
+  "version": "0.1.0",
+  "description": "Automatic long-term memory recall for pi agents via AutoMem MCP",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "automem",
+    "mcp",
+    "memory",
+    "long-term-memory",
+    "semantic-memory"
+  ],
+  "license": "MIT",
+  "author": "pi-automem-core contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vaniteav/pi-automem-core.git"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "scripts": {
+    "test:phase1": "tsx tests/phase1-smoke.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  },
+  "dependencies": {},
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/vaniteav/pi-automem-core/issues"
+  },
+  "homepage": "https://github.com/vaniteav/pi-automem-core#readme",
+  "files": [
+    "src",
+    "skills",
+    "prompts",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
+}
