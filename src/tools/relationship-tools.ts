@@ -1,7 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { loadConfig } from "../config";
+import { loadConfig, type MemoryType } from "../config";
 import { automemStore, automemAssociate, setAutoMemMcpServerName } from "../mcp-client";
+import { evaluateWritePolicy, type MemoryCandidate } from "../write-policy";
 
 const LinkParams = Type.Object({
   memoryId1: Type.String({ description: "ID of the first memory." }),
@@ -58,6 +59,21 @@ export function registerRelationshipTools(pi: ExtensionAPI) {
     async execute(_toolCallId: string, params: any) {
       const config = loadConfig();
       setAutoMemMcpServerName(config.mcpServerName);
+
+      const candidate: MemoryCandidate = {
+        content: params.correction,
+        type: (params.type || "Context") as MemoryType,
+        tags: Array.isArray(params.tags) ? params.tags : [],
+        importance: params.importance,
+      };
+      const decision = evaluateWritePolicy(candidate, config);
+      if (decision.action === "block") {
+        return {
+          content: [{ type: "text" as const, text: "Blocked by AutoMem write policy.\n" + decision.reasons.map((r: string) => "- " + r).join("\n") }],
+          details: { action: decision.action, reasons: decision.reasons, findings: decision.findings },
+          isError: true,
+        };
+      }
 
       if (!params.approvedByUser) {
         return {
