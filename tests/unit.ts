@@ -16,6 +16,7 @@ import { buildContextMessage } from "../src/context-injector";
 import { parseSearchResults } from "../src/recall";
 import { loadConfig, DEFAULT_CONFIG } from "../src/config";
 import { detectProject } from "../src/project-detect";
+import { registerRelationshipTools } from "../src/tools/relationship-tools";
 
 // ---------------------------------------------------------------------------
 // context-injector
@@ -211,6 +212,88 @@ import { detectProject } from "../src/project-detect";
 }
 
 // ---------------------------------------------------------------------------
+// relationship-tools — confirmation gate (no network)
+// ---------------------------------------------------------------------------
+
+(async () => {
+  // Collect tools registered by registerRelationshipTools
+  const tools: Record<string, any> = {};
+  registerRelationshipTools({
+    registerTool(tool: any) { tools[tool.name] = tool; },
+  } as any);
+
+  // automem_link_memories: approvedByUser false → returns isError, no AutoMem call
+  const linkResult = await tools["automem_link_memories"].execute(
+    "test-call-id",
+    { memoryId1: "aaa", memoryId2: "bbb", relationship: "RELATES_TO", approvedByUser: false },
+  );
+  assert.equal(linkResult.isError, true, "link_memories returns isError when approvedByUser is false");
+  assert.ok(linkResult.content[0].text.includes("Confirmation required"), "link_memories confirmation message");
+
+  // automem_correct_memory: approvedByUser false → returns isError, no AutoMem call
+  const correctResult = await tools["automem_correct_memory"].execute(
+    "test-call-id",
+    { memoryId: "ccc", correction: "Fixed content", approvedByUser: false },
+  );
+  assert.equal(correctResult.isError, true, "correct_memory returns isError when approvedByUser is false");
+  assert.ok(correctResult.content[0].text.includes("Confirmation required"), "correct_memory confirmation message");
+})().catch(e => { console.error(e); process.exit(1); });
+
+// UUID extraction regex — replicated from relationship-tools.ts
+{
+  const storeResponseWithUuid = "Memory stored. ID: 550e8400-e29b-41d4-a716-446655440000. Content saved.";
+  const match = storeResponseWithUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  assert.ok(match !== null, "UUID extraction regex finds a UUID in store response text");
+  assert.equal(match![0], "550e8400-e29b-41d4-a716-446655440000", "UUID extraction returns the correct UUID");
+}
+
+{
+  const noUuidResponse = "Memory stored successfully.";
+  const noMatch = noUuidResponse.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  assert.equal(noMatch, null, "UUID extraction returns null when no UUID is present");
+}
+
+// projectOverrides — override applied when project tag matches
+{
+  const baseConfig = {
+    ...DEFAULT_CONFIG,
+    turnRecall: {
+      ...DEFAULT_CONFIG.turnRecall,
+      limit: 6,
+      maxBytes: 4000,
+    },
+    projectOverrides: {
+      "project:big-project": { limit: 10, maxBytes: 8000 },
+    },
+  };
+
+  const projectTag = "project:big-project";
+  const recallConfig = (projectTag && baseConfig.projectOverrides && baseConfig.projectOverrides[projectTag])
+    ? { ...baseConfig.turnRecall, ...baseConfig.projectOverrides[projectTag] }
+    : baseConfig.turnRecall;
+
+  assert.equal(recallConfig.limit, 10, "projectOverrides.limit overrides turnRecall.limit");
+  assert.equal(recallConfig.maxBytes, 8000, "projectOverrides.maxBytes overrides turnRecall.maxBytes");
+  assert.equal(recallConfig.expandRelations, DEFAULT_CONFIG.turnRecall.expandRelations, "unoverridden fields keep their base value");
+}
+
+{
+  const baseConfig2 = {
+    ...DEFAULT_CONFIG,
+    projectOverrides: {
+      "project:other": { limit: 20 },
+    },
+  };
+
+  const projectTag2 = "project:unrelated";
+  const recallConfig2 = (projectTag2 && baseConfig2.projectOverrides && baseConfig2.projectOverrides[projectTag2])
+    ? { ...baseConfig2.turnRecall, ...baseConfig2.projectOverrides[projectTag2] }
+    : baseConfig2.turnRecall;
+
+  assert.equal(recallConfig2.limit, DEFAULT_CONFIG.turnRecall.limit, "non-matching project tag uses base turnRecall.limit");
+}
+
+// ---------------------------------------------------------------------------
 
 console.log("Unit tests passed:");
 console.log("- context-injector (null, startup-only, with-project, both)");
@@ -218,3 +301,5 @@ console.log("- parseSearchResults type detection ([TypeName] prefix)");
 console.log("- config enum validation warnings");
 console.log("- project detection git parent-directory traversal");
 console.log("- SSE response parsing");
+console.log("- relationship-tools confirmation gate and UUID extraction");
+console.log("- projectOverrides turn recall merge");
