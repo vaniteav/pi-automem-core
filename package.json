@@ -1,6 +1,6 @@
 {
   "name": "pi-automem-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Automatic long-term memory recall and policy-gated writes for pi agents via AutoMem MCP",
   "keywords": [
     "pi-package",
