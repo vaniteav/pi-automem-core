@@ -10,7 +10,7 @@ Long-term semantic memory for [pi](https://pi.dev) agents via an AutoMem MCP ser
 - `/automem-status` and `/automem-recall` commands for debugging
 - explicit write tools that propose, scan, dedupe, and confirm before storing
 
-Current status: recall is automatic; memory writes are explicit and policy-gated. The default write mode is propose-first, not automatic.
+Current status: recall is automatic; memory writes are explicit and policy-gated. The default write mode is safe-auto for the four low-risk categories; all other writes require approval.
 
 ## Requirements
 
@@ -124,7 +124,6 @@ Important sections:
 | `turnRecall` | Limits, memory types, and relation/entity expansion for each prompt |
 | `projectDetection` | folder/git/prompt → project tag mappings for scoped turn recall |
 | `writePolicy` | Write mode, safe/confirm/blocked categories, minimum importance, dedupe settings |
-| `vault` | Optional canonical-source metadata for users who maintain an external knowledge base |
 | `behavior` | Recall display mode and content-length preferences |
 
 See `examples/config.minimal.json` and `examples/config.advanced.json` for templates.
@@ -172,9 +171,9 @@ See `examples/config.minimal.json` and `examples/config.advanced.json` for templ
 
 - This package does not include user-specific configuration.
 - Secrets should live in environment variables or your local MCP configuration, not in this package.
-- Write tools are explicit and policy-gated; default mode proposes rather than auto-writes.
+- Write tools are explicit and policy-gated; default mode is safe-auto, which auto-writes only the four configured low-risk categories.
 - Secret-like content, credentials, raw transcripts, blocked categories, and low-importance candidates are blocked before storage.
-- Use `automem_propose_memory` before committing a memory. Use `automem_commit_memory` only after explicit approval unless your local config enables safe-auto for that exact low-risk category.
+- Use `automem_propose_memory` before committing a memory. Use `automem_commit_memory` only after explicit approval unless your config (or the default safe-auto) covers that exact low-risk category.
 
 ### Duplicate handling
 
@@ -189,7 +188,7 @@ When `automem_commit_memory` is called with dedupe enabled (default), AutoMem is
 ```json
 {
   "writePolicy": {
-    "mode": "propose",
+    "mode": "safe-auto",
     "autoWriteCategories": ["technical-decision", "agent-pattern", "bug-fix", "tooling-lesson"],
     "confirmCategories": ["personal", "financial", "private", "identity"],
     "blockedCategories": ["secret", "credential", "api-key", "raw-transcript"],
