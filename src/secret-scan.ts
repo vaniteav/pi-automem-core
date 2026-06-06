@@ -9,7 +9,7 @@ const SECRET_PATTERNS: Array<{ kind: string; regex: RegExp }> = [
   { kind: "github-token", regex: /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/ },
   { kind: "openai-key", regex: /\bsk-[A-Za-z0-9_-]{20,}\b/ },
   { kind: "aws-access-key", regex: /\bAKIA[0-9A-Z]{16}\b/ },
-  { kind: "secret-assignment", regex: /\b(?:api[_-]?key|token|secret|password|passwd|credential)\b\s*[:=]\s*['\"]?[^\s'\"]{8,}/i },
+  { kind: "secret-assignment", regex: /\b(?:api[_-]?key|token|secret|password|passwd|credential)\b\s*[:=]\s*['\"]?[^\s'\"]{20,}/i },
   { kind: "connection-string", regex: /\b(?:postgres|mysql|mongodb|redis):\/\/[^\s]+/i },
 ];
 

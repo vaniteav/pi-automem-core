@@ -53,6 +53,26 @@ function loadMcpServerConfig(serverName: string): { url: string; auth: string } 
 }
 
 // ---------------------------------------------------------------------------
+// Response parsing — handles both JSON and text/event-stream (SSE)
+// ---------------------------------------------------------------------------
+
+async function parseJsonRpcResponse(resp: Response): Promise<any> {
+  const ct = resp.headers.get("content-type") || "";
+  if (ct.includes("text/event-stream")) {
+    const text = await resp.text();
+    // SSE lines are "data: <json>\n"; find the last non-empty data line
+    const dataLine = text
+      .split("\n")
+      .map(function(l: string) { return l.trim(); })
+      .filter(function(l: string) { return l.startsWith("data:") && l.length > 5; })
+      .pop();
+    if (!dataLine) throw new Error("SSE response contained no data lines");
+    return JSON.parse(dataLine.slice(5).trim());
+  }
+  return resp.json();
+}
+
+// ---------------------------------------------------------------------------
 // JSON-RPC client
 // ---------------------------------------------------------------------------
 
@@ -61,7 +81,11 @@ let configuredServerName = process.env.AUTOMEM_MCP_SERVER || "automem";
 
 export function setAutoMemMcpServerName(serverName: string | undefined): void {
   if (serverName && serverName.trim()) {
-    configuredServerName = serverName.trim();
+    const newName = serverName.trim();
+    if (newName !== configuredServerName) {
+      discoveredTools = null;
+      configuredServerName = newName;
+    }
   }
 }
 
@@ -100,7 +124,7 @@ async function mcpCall(tool: string, args: Record<string, unknown>): Promise<Mcp
       throw new Error("MCP HTTP " + resp.status + ": " + text.slice(0, 200));
     }
 
-    const payload = (await resp.json()) as {
+    const payload = (await parseJsonRpcResponse(resp)) as {
       result?: McpCallResult;
       error?: { code: number; message: string };
     };
@@ -158,7 +182,7 @@ export async function discoverTools(): Promise<Map<string, string>> {
       throw new Error("MCP tools/list HTTP " + resp.status);
     }
 
-    const payload = (await resp.json()) as {
+    const payload = (await parseJsonRpcResponse(resp)) as {
       result?: { tools?: Array<{ name: string }> };
       error?: { code: number; message: string };
     };
@@ -307,6 +331,27 @@ export async function automemAssociate(
     type: relationship,
     strength,
   });
+}
+
+export async function automemUpdate(
+  memoryId: string,
+  updates: {
+    content?: string;
+    type?: string;
+    tags?: string[];
+    importance?: number;
+    confidence?: number;
+    metadata?: Record<string, unknown>;
+  },
+): Promise<McpCallResult> {
+  const args: Record<string, unknown> = { memory_id: memoryId };
+  if (updates.content !== undefined) args.content = updates.content;
+  if (updates.type !== undefined) args.type = updates.type;
+  if (updates.tags !== undefined) args.tags = updates.tags;
+  if (updates.importance !== undefined) args.importance = updates.importance;
+  if (updates.confidence !== undefined) args.confidence = updates.confidence;
+  if (updates.metadata !== undefined) args.metadata = updates.metadata;
+  return mcpCall(resolveToolName("update_memory"), args);
 }
 
 export async function automemDelete(memoryId: string): Promise<McpCallResult> {

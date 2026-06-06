@@ -108,7 +108,8 @@ Example:
 | `/automem-status` | Show AutoMem health, memory count, and config summary |
 | `/automem-recall <query>` | Manually query AutoMem for debugging |
 | `automem_propose_memory` | Tool: validate and preview a memory candidate without writing |
-| `automem_commit_memory` | Tool: store a policy-approved memory after confirmation or safe-auto policy |
+| `automem_commit_memory` | Tool: store a policy-approved memory; returns DUPLICATE_DETECTED if a similar memory exists |
+| `automem_update_memory` | Tool: update an existing memory by ID |
 
 ## Configuration reference
 
@@ -121,7 +122,7 @@ Important sections:
 | `mcpServerName` | Name of the MCP server in `mcp.json` |
 | `startupRecall` | Queries, tags, tag mode, limits, and byte budget for session-start recall |
 | `turnRecall` | Limits, memory types, and relation/entity expansion for each prompt |
-| `projectDetection` | Optional folder, git, and prompt mappings to project tags |
+| `projectDetection` | folder/git/prompt → project tag mappings for scoped turn recall |
 | `writePolicy` | Write mode, safe/confirm/blocked categories, minimum importance, dedupe settings |
 | `vault` | Optional canonical-source metadata for users who maintain an external knowledge base |
 | `behavior` | Recall display mode and content-length preferences |
@@ -145,15 +146,21 @@ See `examples/config.minimal.json` and `examples/config.advanced.json` for templ
     "limit": 6,
     "maxBytes": 5000
   },
-  "turnRecall": {
-    "enabled": true,
-    "limit": 5,
-    "maxBytes": 3000
-  },
   "projectDetection": {
+    "folderTags": {
+      "projects": ["project"],
+      "my-repo": ["project:my-project"]
+    },
     "gitRepoToTag": {
-      "my-project": "project:my-project"
+      "my-org/my-project": "project:my-project"
     }
+  },
+  "turnRecall": {
+    "limit": 5,
+    "maxBytes": 3000,
+    "contextTypes": ["Preference", "Decision", "Pattern", "Insight", "Context"],
+    "expandRelations": true,
+    "expandEntities": true
   },
   "behavior": {
     "displayRecall": "hidden"
@@ -168,6 +175,14 @@ See `examples/config.minimal.json` and `examples/config.advanced.json` for templ
 - Write tools are explicit and policy-gated; default mode proposes rather than auto-writes.
 - Secret-like content, credentials, raw transcripts, blocked categories, and low-importance candidates are blocked before storage.
 - Use `automem_propose_memory` before committing a memory. Use `automem_commit_memory` only after explicit approval unless your local config enables safe-auto for that exact low-risk category.
+
+### Duplicate handling
+
+When `automem_commit_memory` is called with dedupe enabled (default), AutoMem is queried for similar memories before storing. If a close match exists, the tool returns a `DUPLICATE_DETECTED` response containing the existing memory's ID and content. You can then:
+
+1. **Update the existing memory** — call `automem_commit_memory` again with `updateMemoryId` set to the returned ID, or use `automem_update_memory` directly.
+2. **Force a new store** — set `dedupeQuery` to `""` to skip the dedupe check.
+3. **Cancel** — do nothing if the existing memory already covers the information.
 
 ## Write policy example
 
@@ -200,16 +215,39 @@ npm install
 npm test
 ```
 
-`test:phase1` is a live smoke test. It requires a working AutoMem MCP server configured in your local pi MCP config. `test:phase2` covers write policy, secret scanning, and tool registration without writing memories.
+| Script | What it tests |
+|---|---|
+| `npm run test:phase1` | Live smoke test: health, recall, parser, project detection, display modes |
+| `npm run test:phase2` | Write policy, secret scanning, tool registration (no writes) |
+| `npm run test:phase2:live` | Full round-trip: commit, dedupe detection, update, cleanup |
 
-## Publishing checklist
+`test:phase1` and `test:phase2:live` require a working AutoMem MCP server. `test:phase2` runs entirely offline.
 
-Before publishing a fork or derivative package:
+## Updating memories
 
-1. Verify `npm run test:phase1` passes.
-2. Run a sensitive-data scan.
-3. Run `npm pack --dry-run` and inspect package contents.
-4. Publish to npm with the `pi-package` keyword so it is discoverable by pi's package gallery.
+Use `automem_update_memory` when you have a specific memory ID and want to correct or enrich it without creating a duplicate:
+
+```
+automem_update_memory({
+  memoryId: "uuid-of-existing-memory",
+  content: "Corrected content",
+  tags: ["source:pi", "corrected"],
+  approvedByUser: true
+})
+```
+
+Fields `content`, `type`, `tags`, `importance`, `confidence`, and `metadata` are all optional — only the fields you provide are updated. The `metadata` object is merged with existing metadata.
+
+## Changelog
+
+### 0.1.0 — 2026-06-04
+
+- Recall-only core: startup recall, turn-level recall, project detection, three display modes
+- Curated writes: propose → scan → confirm → store pipeline with secret scanning
+- Duplicate detection: `automem_commit_memory` surfaces `DUPLICATE_DETECTED` with existing memory ID
+- Update path: `automem_update_memory` standalone tool + `updateMemoryId` param on commit
+- Configurable write modes: off, propose, safe-auto, confirm-all
+- Bounded recall with byte budgets and configurable limits
 
 ## License
 

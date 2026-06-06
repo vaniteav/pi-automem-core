@@ -12,7 +12,7 @@ import type { ProjectDetection } from "./project-detect";
 // Formatting helpers
 // ---------------------------------------------------------------------------
 
-interface FormattedMemory {
+export interface FormattedMemory {
   id: string;
   type: string;
   content: string;
@@ -20,7 +20,7 @@ interface FormattedMemory {
   score?: number;
 }
 
-function parseSearchResults(text: string): FormattedMemory[] {
+export function parseSearchResults(text: string): FormattedMemory[] {
   if (!text || !text.trim()) return [];
 
   // Try JSON array first
@@ -69,10 +69,19 @@ function parseSearchResults(text: string): FormattedMemory[] {
         : [];
       const cleanContent = tagMatch ? content.slice(0, tagMatch.index).trim() : content;
 
+      // AutoMem's human-readable format doesn't reliably include type info.
+      // Some versions prefix content with [TypeName]; detect it if present.
+      const KNOWN_TYPES = new Set(["Decision", "Pattern", "Preference", "Style", "Habit", "Insight", "Context"]);
+      const typePrefix = cleanContent.match(/^\[([A-Za-z]+)\]\s*/);
+      const detectedType = (typePrefix && KNOWN_TYPES.has(typePrefix[1])) ? typePrefix[1] : "Context";
+      const finalContent = (typePrefix && KNOWN_TYPES.has(typePrefix[1]))
+        ? cleanContent.slice(typePrefix[0].length)
+        : cleanContent;
+
       memories.push({
         id: idMatch ? idMatch[1] : "",
-        type: "Context",
-        content: cleanContent,
+        type: detectedType,
+        content: finalContent,
         tags,
         score: scoreMatch ? Number(scoreMatch[1]) : undefined,
       });

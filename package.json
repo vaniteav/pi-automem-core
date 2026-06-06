@@ -20,13 +20,14 @@
     "url": "https://github.com/vaniteav/pi-automem-core.git"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-coding-agent": ">=0.78.0",
     "typebox": "*"
   },
   "scripts": {
+    "test:unit": "tsx tests/unit.ts",
     "test:phase1": "tsx tests/phase1-smoke.ts",
     "test:phase2": "tsx tests/phase2-policy.ts",
-    "test": "npm run test:phase1 && npm run test:phase2",
+    "test": "npm run test:unit && npm run test:phase2",
     "test:phase2:live": "tsx tests/phase2-live-write.ts"
   },
   "devDependencies": {

@@ -234,5 +234,17 @@ export function loadConfig(): AutoMemConfig {
     config.turnRecall.limit = 6;
   }
 
+  const validDisplayModes = ["full", "summary", "hidden"];
+  if (!validDisplayModes.includes(config.behavior.displayRecall)) {
+    console.warn("[automem] unknown behavior.displayRecall \"" + config.behavior.displayRecall + "\", valid values: full, summary, hidden. Defaulting to \"summary\"");
+    config.behavior.displayRecall = "summary";
+  }
+
+  const validWriteModes = ["off", "propose", "safe-auto", "confirm-all"];
+  if (!validWriteModes.includes(config.writePolicy.mode)) {
+    console.warn("[automem] unknown writePolicy.mode \"" + config.writePolicy.mode + "\", valid values: off, propose, safe-auto, confirm-all. Defaulting to \"propose\"");
+    config.writePolicy.mode = "propose";
+  }
+
   return config;
 }

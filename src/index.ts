@@ -126,7 +126,7 @@ export default function (pi: ExtensionAPI) {
     // returning a session message. `display: false` hides from the TUI, but API
     // transcripts can still expose message injections as large context blocks.
     return {
-      systemPrompt: event.systemPrompt + "\n\n" + injection.message,
+      systemPrompt: (event.systemPrompt || "") + "\n\n" + injection.message,
     };
   });
 

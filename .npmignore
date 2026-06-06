@@ -5,6 +5,8 @@ tests/
 .env.*
 .git/
 .gitignore
+CONTRIBUTING.md
+PLAN.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

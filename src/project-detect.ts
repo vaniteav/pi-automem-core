@@ -12,26 +12,34 @@ export interface ProjectDetection {
 }
 
 function detectFromGit(cwd: string, gitRepoToTag: Record<string, string>): ProjectDetection {
-  const gitConfigPath = resolve(cwd, ".git", "config");
-  if (!existsSync(gitConfigPath)) return { projectTag: null, projectLabel: null };
-
-  try {
-    const gitConfig = readFileSync(gitConfigPath, "utf8");
-    const urlMatch = gitConfig.match(/\[remote "[^"]+"\][\s\S]*?url\s*=\s*(.+)/);
-    if (!urlMatch) return { projectTag: null, projectLabel: null };
-
-    const remoteUrl = urlMatch[1].trim().toLowerCase();
-
-    const keys = Object.keys(gitRepoToTag);
-    for (let i = 0; i < keys.length; i++) {
-      const substring = keys[i].toLowerCase();
-      if (remoteUrl.indexOf(substring) !== -1) {
-        const tag = gitRepoToTag[keys[i]];
-        return { projectTag: tag, projectLabel: tag.replace(/^[^:]+:/, "") };
+  // Walk up the directory tree to handle running from a subdirectory of a repo
+  let dir = cwd;
+  while (true) {
+    const gitConfigPath = resolve(dir, ".git", "config");
+    if (existsSync(gitConfigPath)) {
+      try {
+        const gitConfig = readFileSync(gitConfigPath, "utf8");
+        const urlMatch = gitConfig.match(/\[remote "[^"]+"\][\s\S]*?url\s*=\s*(.+)/);
+        if (urlMatch) {
+          const remoteUrl = urlMatch[1].trim().toLowerCase();
+          const keys = Object.keys(gitRepoToTag);
+          for (let i = 0; i < keys.length; i++) {
+            const substring = keys[i].toLowerCase();
+            if (remoteUrl.indexOf(substring) !== -1) {
+              const tag = gitRepoToTag[keys[i]];
+              return { projectTag: tag, projectLabel: tag.replace(/^[^:]+:/, "") };
+            }
+          }
+        }
+      } catch (_e) {
+        // ignore unreadable config
       }
+      // Found .git but no matching remote — stop traversing
+      break;
     }
-  } catch (_e) {
-    // ignore
+    const parent = resolve(dir, "..");
+    if (parent === dir) break; // reached filesystem root
+    dir = parent;
   }
 
   return { projectTag: null, projectLabel: null };

@@ -83,13 +83,13 @@ export function evaluateWritePolicy(input: MemoryCandidate, config: AutoMemConfi
 }
 
 export function formatCandidate(candidate: MemoryCandidate): string {
-  return [
-    `Content: ${candidate.content}`,
-    `Type: ${candidate.type}`,
-    `Importance: ${candidate.importance}`,
-    `Tags: ${candidate.tags.join(", ") || "(none)"}`,
-    `Category: ${candidate.category || "(inferred)"}`,
-  ].join("\n");
+  return (
+    "Content: " + candidate.content + "\n" +
+    "Type: " + candidate.type + "\n" +
+    "Importance: " + candidate.importance + "\n" +
+    "Tags: " + (candidate.tags.join(", ") || "(none)") + "\n" +
+    "Category: " + (candidate.category || "(inferred)")
+  );
 }
 
 function isBlockedCategory(candidate: MemoryCandidate, config: AutoMemConfig): boolean {
