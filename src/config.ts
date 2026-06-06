@@ -69,11 +69,6 @@ export interface AutoMemConfig {
     dedupeBeforeWrite: boolean;
     dedupeLimit: number;
   };
-  vault: {
-    canonical: boolean;
-    vaultPath?: string;
-    importTag?: string;
-  };
   behavior: {
     injectSystemPrompt: boolean;
     displayRecall: "full" | "summary" | "hidden";
@@ -117,7 +112,7 @@ export const DEFAULT_CONFIG: AutoMemConfig = {
     gitRepoToTag: {},
   },
   writePolicy: {
-    mode: "propose",
+    mode: "safe-auto",
     autoWriteCategories: ["technical-decision", "agent-pattern", "bug-fix", "tooling-lesson"],
     confirmCategories: ["personal", "financial", "private", "identity"],
     blockedCategories: ["secret", "credential", "api-key", "raw-transcript"],
@@ -127,9 +122,6 @@ export const DEFAULT_CONFIG: AutoMemConfig = {
     minImportanceToWrite: 0.7,
     dedupeBeforeWrite: true,
     dedupeLimit: 3,
-  },
-  vault: {
-    canonical: false,
   },
   behavior: {
     injectSystemPrompt: true,
