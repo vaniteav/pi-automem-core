@@ -18,6 +18,7 @@ import { buildContextMessage } from "./context-injector";
 import { registerStatusCommand } from "./commands/status";
 import { registerRecallCommand } from "./commands/recall";
 import { registerMemoryTools } from "./tools/memory-tools";
+import { registerRelationshipTools } from "./tools/relationship-tools";
 
 export default function (pi: ExtensionAPI) {
   let config = loadConfig();
@@ -31,6 +32,7 @@ export default function (pi: ExtensionAPI) {
   registerStatusCommand(pi);
   registerRecallCommand(pi);
   registerMemoryTools(pi);
+  registerRelationshipTools(pi);
 
   // session_start - Load config, check health, run startup recall
   pi.on("session_start", async function(_event: any, ctx: any) {

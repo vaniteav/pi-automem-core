@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG, type AutoMemConfig } from "../src/config";
 import { scanForSecrets } from "../src/secret-scan";
 import { evaluateWritePolicy } from "../src/write-policy";
 import { registerMemoryTools } from "../src/tools/memory-tools";
+import { registerRelationshipTools } from "../src/tools/relationship-tools";
 
 function testConfig(overrides: Partial<AutoMemConfig> = {}): AutoMemConfig {
   return {
@@ -69,6 +70,14 @@ registerMemoryTools({
 } as any);
 assert.deepEqual(registered.sort(), ["automem_commit_memory", "automem_propose_memory", "automem_update_memory"], "Phase 2 tools should register");
 
+const relRegistered: string[] = [];
+registerRelationshipTools({
+  registerTool(tool: any) {
+    relRegistered.push(tool.name);
+  },
+} as any);
+assert.deepEqual(relRegistered.sort(), ["automem_correct_memory", "automem_link_memories"], "relationship tools should register");
+
 console.log("Phase 2 policy tests passed:");
 console.log("- safe-auto auto-writes configured low-risk categories by default");
 console.log("- explicit propose mode still works");
@@ -76,3 +85,4 @@ console.log("- safe-auto only for configured low-risk categories");
 console.log("- confirmation for private categories");
 console.log("- low-importance and secrets blocked");
 console.log("- write tools register (propose, commit, update)");
+console.log("- relationship tools register (link, correct)");
