@@ -204,7 +204,7 @@ export async function discoverTools(): Promise<Map<string, string>> {
     }
 
     discoveredTools = map;
-    console.log("[automem] discovered tools: " + Array.from(map.values()).join(", "));
+    console.log("[automem] discovered tools: " + Array.from(new Set(map.values())).join(", "));
     return map;
   } catch (err) {
     console.warn("[automem] tools/list failed, using default tool names: " + err);
