@@ -21,6 +21,7 @@
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": ">=0.78.0",
+    "@verygoodplugins/mcp-automem": "*",
     "typebox": "*"
   },
   "scripts": {
