@@ -1,5 +1,7 @@
 <div align="center">
 
+![Pi Automem Bridge](assets/banner.png)
+
 # pi-automem-bridge
 
 The missing link between [pi](https://github.com/earendil-works/pi) and [AutoMem](https://github.com/verygoodplugins/automem). If you already have both set up, this package connects them — giving pi automatic long-term memory: startup recall, turn-level recall, policy-gated writes, and relationship tools.
