@@ -19,7 +19,7 @@ AutoMem is pi's long-term semantic memory, available automatically in this sessi
 
 - Do **not** write raw session transcripts, long summaries, or incidental chatter.
 - Use `automem_propose_memory` first for durable candidates. It validates type/tags/importance, scans for secrets, and checks for similar memories.
-- Use `automem_commit_memory` only after explicit user approval, unless local config uses a safe-auto policy for the exact category.
+- Use `automem_commit_memory` only after explicit user approval, unless the category is in the safe-auto list (technical-decision, agent-pattern, bug-fix, tooling-lesson) — those auto-write by default.
 - Good memory candidates are compact, intentional, and useful across sessions: decisions, preferences, repeated patterns, key insights, durable bug-fix lessons, and important project context.
 
 ## Memory types

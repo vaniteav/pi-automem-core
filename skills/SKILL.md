@@ -32,7 +32,7 @@ The footer shows:
 
 ## Write policy
 
-Default mode is propose-first. Store only compact durable knowledge: decisions, preferences, patterns, insights, durable bug-fix lessons, and important context. Never store secrets, credentials, raw transcripts, or incidental chatter.
+Default mode is safe-auto for the four low-risk categories (technical-decision, agent-pattern, bug-fix, tooling-lesson); all other writes require explicit approval. Store only compact durable knowledge: decisions, preferences, patterns, insights, and important context. Never store secrets, credentials, raw transcripts, or incidental chatter.
 
 Use `automem_propose_memory` before committing. Use `automem_commit_memory` only after explicit user approval unless config enables safe-auto for the exact low-risk category.
 
