@@ -165,8 +165,8 @@ git clone https://github.com/vaniteav/pi-automem-core.git
 cd pi-automem-core
 npm install
 npm test               # offline tests
-npm run test:phase1    # live smoke test (requires AutoMem)
-npm run test:phase2:live  # full round-trip write test (requires AutoMem)
+npm run test:smoke     # live smoke test (requires AutoMem)
+npm run test:live      # full round-trip write test (requires AutoMem)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, test descriptions, and release process.

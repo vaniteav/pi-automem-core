@@ -1,7 +1,5 @@
 /**
  * index.ts - AutoMem Core Extension entry point.
- *
- * Phase 1: Recall-only core.
  * - session_start: load config, health check, startup recall
  * - before_agent_start: turn-level recall, inject context
  * - /automem-status: health + memory count
@@ -28,7 +26,7 @@ export default function (pi: ExtensionAPI) {
   let startupInjected = false;
   let startupResult: RecallResult = { text: "", count: 0, truncated: false };
 
-  // Register commands and Phase 2 explicit write tools
+  // Register commands and write tools
   registerStatusCommand(pi);
   registerRecallCommand(pi);
   registerMemoryTools(pi);

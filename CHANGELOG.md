@@ -17,7 +17,7 @@
 
 ## 0.1.0 — 2026-06-04
 
-### Phase 1 — Recall core
+### Recall core
 - Config loader with defaults and validation for `~/.pi/agent/automem.json`
 - MCP JSON-RPC client reusing pi's existing `~/.pi/agent/mcp.json` connection
 - Tool discovery with name normalization for `automem_` prefix
@@ -28,7 +28,7 @@
 - `/automem-status` and `/automem-recall` commands
 - Graceful degradation when AutoMem is unavailable
 
-### Phase 2 — Curated writes
+### Write tools
 - `automem_propose_memory` — validates and previews candidates without writing
 - `automem_commit_memory` — policy-gated store with secret scanning, dedupe check, and confirmation flow
 - `automem_update_memory` — standalone tool to update any memory by ID
