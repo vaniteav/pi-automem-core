@@ -10,8 +10,8 @@ The missing link between [pi](https://github.com/earendil-works/pi) and [AutoMem
 pi install npm:pi-automem-bridge
 ```
 
-[![npm version](https://badge.fury.io/js/pi-automem-bridge.svg)](https://badge.fury.io/js/pi-automem-bridge)
-[![npm downloads](https://img.shields.io/npm/dw/pi-automem-bridge)](https://www.npmjs.com/package/pi-automem-bridge)
+[![npm version](https://shieldcn.dev/npm/pi-automem-bridge.png)](https://www.npmjs.com/package/pi-automem-bridge)
+[![npm downloads](https://shieldcn.dev/npm/dw/pi-automem-bridge.png)](https://www.npmjs.com/package/pi-automem-bridge)
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L2J320X82M)
 
