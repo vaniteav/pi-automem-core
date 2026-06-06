@@ -45,5 +45,15 @@
     "displayRecall": "hidden",
     "maxContentLength": 2000,
     "preferredContentLength": 500
+  },
+  "projectOverrides": {
+    "project:my-large-project": {
+      "limit": 10,
+      "maxBytes": 6000
+    },
+    "project:quick-scripts": {
+      "limit": 2,
+      "maxBytes": 1000
+    }
   }
 }

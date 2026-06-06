@@ -22,6 +22,11 @@ AutoMem is pi's long-term semantic memory, available automatically in this sessi
 - Use `automem_commit_memory` only after explicit user approval, unless the category is in the safe-auto list (technical-decision, agent-pattern, bug-fix, tooling-lesson) — those auto-write by default.
 - Good memory candidates are compact, intentional, and useful across sessions: decisions, preferences, repeated patterns, key insights, durable bug-fix lessons, and important project context.
 
+## Relationship tools
+
+- `automem_link_memories` — create a typed relationship between two existing memories by ID. Requires both IDs and a `RelationshipType`. Use after recognizing that two stored memories are causally or semantically linked.
+- `automem_correct_memory` — store a corrected version of an existing memory and link the old memory to the new one (EVOLVED_INTO or CONTRADICTS). Use when the original memory was wrong or outdated and you want to preserve the history. For simple in-place edits, use `automem_update_memory` instead.
+
 ## Memory types
 
 AutoMem uses 7 typed memories: Decision, Pattern, Preference, Style, Habit, Insight, Context.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 — 2026-06-06
+
+### Added
+- `automem_link_memories` — create a typed relationship between two existing memories by ID (`src/tools/relationship-tools.ts`)
+- `automem_correct_memory` — store a corrected memory and link old → new with EVOLVED_INTO or CONTRADICTS relationship; preserves provenance history
+- `projectOverrides` config section — per-project `limit`, `maxBytes`, `contextTypes`, `expandRelations`, `expandEntities` overrides applied during turn recall when a project tag is detected
+
 ## 0.1.0 — 2026-06-06 (pre-publish cleanup)
 
 ### Changed
