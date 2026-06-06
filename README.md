@@ -1,10 +1,28 @@
+<div align="center">
+
 # pi-automem-core
 
-Long-term semantic memory for [pi](https://pi.dev) agents via [AutoMem](https://github.com/your-automem-link) MCP.
+The missing link between [pi](https://github.com/earendil-works/pi) and [AutoMem](https://github.com/verygoodplugins/automem). If you already have both set up, this package connects them — giving pi automatic long-term memory: startup recall, turn-level recall, policy-gated writes, and relationship tools.
 
 ```bash
 pi install npm:pi-automem-core
 ```
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L2J320X82M)
+
+</div>
+
+---
+
+## Before you begin
+
+This package does not include pi or AutoMem — it connects them. You need both running independently first:
+
+1. **[pi](https://github.com/earendil-works/pi)** — the agent this extension runs inside
+2. **[AutoMem](https://github.com/verygoodplugins/automem)** — the graph-vector memory service (self-hosted or Railway)
+3. **[mcp-automem](https://github.com/verygoodplugins/mcp-automem)** — the MCP bridge that exposes AutoMem's tools over the MCP protocol
+
+Once those three are in place, add `mcp-automem` to pi's MCP config and install this package. That's all the wiring this package needs.
 
 ---
 
@@ -16,15 +34,6 @@ pi install npm:pi-automem-core
 - **Policy-gated writes** — every memory write is validated, secret-scanned, deduplicated, and confirmed before storage
 - **Relationship tools** — link memories to each other or record corrections with provenance history
 - **Per-project tuning** — configure different recall limits and filters per detected project
-
----
-
-## Requirements
-
-- pi with package support
-- An AutoMem-compatible MCP server configured in `~/.pi/agent/mcp.json`
-
-The extension reads your existing MCP config — it does not store credentials or server URLs.
 
 ---
 
@@ -164,10 +173,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, test descriptions
 
 ---
 
+## Credits
+
+This package builds on two excellent open-source projects:
+
+- **[pi](https://github.com/earendil-works/pi)** by [Earendil Works](https://github.com/earendil-works) — the extensible AI agent toolkit this package runs on
+- **[AutoMem](https://github.com/verygoodplugins/automem)** by [Very Good Plugins](https://github.com/verygoodplugins) — the graph-vector memory service powering recall and storage
+- **[mcp-automem](https://github.com/verygoodplugins/mcp-automem)** by [Very Good Plugins](https://github.com/verygoodplugins) — the MCP bridge this extension communicates through
+
+---
+
 ## License
 
 MIT — [vaniteav](https://github.com/vaniteav)
 
 ---
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L2J320X82M)
