@@ -171,7 +171,6 @@ npm run test:smoke     # live smoke test (requires AutoMem)
 npm run test:live      # full round-trip write test (requires AutoMem)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, test descriptions, and release process.
 
 ---
 
