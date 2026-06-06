@@ -29,8 +29,11 @@ const durableDecision = {
 };
 
 const proposed = evaluateWritePolicy(durableDecision, testConfig());
-assert.equal(proposed.action, "propose", "default mode should propose rather than auto-write");
-assert.ok(proposed.normalized.tags.includes("source:pi"), "default source tag should be added");
+assert.equal(proposed.action, "auto", "default safe-auto mode should auto-write configured low-risk categories");
+
+const explicitPropose = evaluateWritePolicy(durableDecision, testConfig({ writePolicy: { ...DEFAULT_CONFIG.writePolicy, mode: "propose" } }));
+assert.equal(explicitPropose.action, "propose", "explicit propose mode should propose rather than auto-write");
+assert.ok(explicitPropose.normalized.tags.includes("source:pi"), "default source tag should be added");
 
 const safeAuto = evaluateWritePolicy(durableDecision, testConfig({ writePolicy: { ...DEFAULT_CONFIG.writePolicy, mode: "safe-auto" } }));
 assert.equal(safeAuto.action, "auto", "safe-auto mode should allow configured low-risk categories");
@@ -64,11 +67,12 @@ registerMemoryTools({
     registered.push(tool.name);
   },
 } as any);
-assert.deepEqual(registered.sort(), ["automem_commit_memory", "automem_propose_memory"], "Phase 2 tools should register");
+assert.deepEqual(registered.sort(), ["automem_commit_memory", "automem_propose_memory", "automem_update_memory"], "Phase 2 tools should register");
 
 console.log("Phase 2 policy tests passed:");
-console.log("- propose by default");
+console.log("- safe-auto auto-writes configured low-risk categories by default");
+console.log("- explicit propose mode still works");
 console.log("- safe-auto only for configured low-risk categories");
 console.log("- confirmation for private categories");
 console.log("- low-importance and secrets blocked");
-console.log("- write tools register");
+console.log("- write tools register (propose, commit, update)");
