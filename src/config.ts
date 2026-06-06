@@ -32,6 +32,14 @@ export type RelationshipType =
   | "DERIVED_FROM"
   | "PART_OF";
 
+export interface ProjectRecallOverride {
+  limit?: number;
+  maxBytes?: number;
+  contextTypes?: MemoryType[];
+  expandRelations?: boolean;
+  expandEntities?: boolean;
+}
+
 export interface AutoMemConfig {
   mcpServerName: string;
   startupRecall: {
@@ -57,6 +65,7 @@ export interface AutoMemConfig {
     folderTags: Record<string, string[]>;
     gitRepoToTag: Record<string, string>;
   };
+  projectOverrides?: Record<string, ProjectRecallOverride>;
   writePolicy: {
     mode: "off" | "propose" | "safe-auto" | "confirm-all";
     autoWriteCategories: string[];
