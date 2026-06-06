@@ -227,20 +227,24 @@ export async function turnRecall(
     tags.push(project.projectTag);
   }
 
+  const recallConfig = (project.projectTag && config.projectOverrides && config.projectOverrides[project.projectTag])
+    ? { ...config.turnRecall, ...config.projectOverrides[project.projectTag] }
+    : config.turnRecall;
+
   try {
     const result = await automemRecall(query, {
-      limit: config.turnRecall.limit,
+      limit: recallConfig.limit,
       tags: tags.length > 0 ? tags : undefined,
       tagMode: "any",
-      contextTypes: config.turnRecall.contextTypes as unknown as string[],
-      expandRelations: config.turnRecall.expandRelations,
-      expandEntities: config.turnRecall.expandEntities,
+      contextTypes: recallConfig.contextTypes as unknown as string[],
+      expandRelations: recallConfig.expandRelations,
+      expandEntities: recallConfig.expandEntities,
     });
 
     const text = result.content && result.content[0] ? result.content[0].text || "" : "";
     const memories = parseSearchResults(text);
-    const formatted = formatMemoriesForContext(memories, config.turnRecall.maxBytes);
-    const truncated = Buffer.byteLength(formatted, "utf8") >= config.turnRecall.maxBytes && memories.length > 0;
+    const formatted = formatMemoriesForContext(memories, recallConfig.maxBytes);
+    const truncated = Buffer.byteLength(formatted, "utf8") >= recallConfig.maxBytes && memories.length > 0;
 
     return { text: formatted, count: memories.length, truncated };
   } catch (err) {
