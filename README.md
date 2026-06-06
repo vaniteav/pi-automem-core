@@ -1,11 +1,11 @@
 <div align="center">
 
-# pi-automem-core
+# pi-automem-bridge
 
 The missing link between [pi](https://github.com/earendil-works/pi) and [AutoMem](https://github.com/verygoodplugins/automem). If you already have both set up, this package connects them — giving pi automatic long-term memory: startup recall, turn-level recall, policy-gated writes, and relationship tools.
 
 ```bash
-pi install npm:pi-automem-core
+pi install npm:pi-automem-bridge
 ```
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L2J320X82M)
@@ -161,8 +161,8 @@ See [`examples/config.minimal.json`](examples/config.minimal.json) and [`example
 ## Development
 
 ```bash
-git clone https://github.com/vaniteav/pi-automem-core.git
-cd pi-automem-core
+git clone https://github.com/vaniteav/pi-automem-bridge.git
+cd pi-automem-bridge
 npm install
 npm test               # offline tests
 npm run test:smoke     # live smoke test (requires AutoMem)

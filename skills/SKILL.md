@@ -1,5 +1,5 @@
 ---
-name: automem-core
+name: automem-bridge
 description: Long-term semantic memory for pi via AutoMem MCP. Provides startup recall, turn-level recall, project detection, and memory health status. Use when the session starts, when recalling context, or when checking AutoMem health.
 ---
 

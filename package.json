@@ -1,5 +1,5 @@
 {
-  "name": "pi-automem-core",
+  "name": "pi-automem-bridge",
   "version": "0.2.0",
   "description": "Automatic long-term memory recall and policy-gated writes for pi agents via AutoMem MCP",
   "keywords": [
@@ -17,7 +17,7 @@
   "author": "vaniteav",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vaniteav/pi-automem-core.git"
+    "url": "https://github.com/vaniteav/pi-automem-bridge.git"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": ">=0.78.0",
@@ -44,9 +44,9 @@
     ]
   },
   "bugs": {
-    "url": "https://github.com/vaniteav/pi-automem-core/issues"
+    "url": "https://github.com/vaniteav/pi-automem-bridge/issues"
   },
-  "homepage": "https://github.com/vaniteav/pi-automem-core#readme",
+  "homepage": "https://github.com/vaniteav/pi-automem-bridge#readme",
   "files": [
     "src",
     "skills",
