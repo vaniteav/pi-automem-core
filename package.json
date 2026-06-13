@@ -1,6 +1,6 @@
 {
   "name": "pi-automem-bridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Automatic long-term memory recall and policy-gated writes for pi agents via AutoMem MCP",
   "keywords": [
     "pi-package",
