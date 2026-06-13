@@ -30,9 +30,11 @@ export interface McpHealth {
 // ---------------------------------------------------------------------------
 
 // Cache the parsed server config per server name to keep readFileSync + JSON
-// parse off the per-turn recall hot path. The cache is gated on the file's
-// mtime (a cheap stat), so an in-place mcp.json edit is still picked up.
-interface CachedServerConfig { url: string; auth: string; mtimeMs: number }
+// parse off the per-turn recall hot path. The cache is validated against a
+// cheap stat signature (mtime + size — the same quick-check make/rsync use), so
+// an in-place mcp.json edit is still picked up even within a single mtime tick.
+// An empty signature (stat failed) never matches, forcing a fresh read.
+interface CachedServerConfig { url: string; auth: string; signature: string }
 let mcpConfigCache: Map<string, CachedServerConfig> = new Map();
 
 function loadMcpServerConfig(serverName: string): CachedServerConfig {
@@ -42,14 +44,17 @@ function loadMcpServerConfig(serverName: string): CachedServerConfig {
     throw new Error("mcp.json not found at " + mcpJsonPath);
   }
 
-  let mtimeMs = 0;
-  try { mtimeMs = statSync(mcpJsonPath).mtimeMs; } catch (_e) { /* fall through to read */ }
+  let signature = "";
+  try {
+    const st = statSync(mcpJsonPath);
+    signature = st.mtimeMs + ":" + st.size;
+  } catch (_e) { /* leave signature empty so the cache is bypassed */ }
 
   const cached = mcpConfigCache.get(serverName);
-  if (cached && cached.mtimeMs === mtimeMs) return cached;
+  if (cached && signature !== "" && cached.signature === signature) return cached;
 
-  // The file changed on disk (cached entry exists but the mtime differs). The
-  // endpoint may now expose different tools, so drop the discovery cache too.
+  // The file changed on disk (or the stat failed). The endpoint may now expose
+  // different tools, so drop the discovery cache too.
   if (cached) discoveredTools = null;
 
   const mcpJson = JSON.parse(readFileSync(mcpJsonPath, "utf8")) as {
@@ -65,7 +70,7 @@ function loadMcpServerConfig(serverName: string): CachedServerConfig {
   const entry: CachedServerConfig = {
     url: server.url,
     auth: resolveEnvVars(server.headers?.Authorization || ""),
-    mtimeMs,
+    signature,
   };
   mcpConfigCache.set(serverName, entry);
   return entry;
