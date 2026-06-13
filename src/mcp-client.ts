@@ -48,6 +48,10 @@ function loadMcpServerConfig(serverName: string): CachedServerConfig {
   const cached = mcpConfigCache.get(serverName);
   if (cached && cached.mtimeMs === mtimeMs) return cached;
 
+  // The file changed on disk (cached entry exists but the mtime differs). The
+  // endpoint may now expose different tools, so drop the discovery cache too.
+  if (cached) discoveredTools = null;
+
   const mcpJson = JSON.parse(readFileSync(mcpJsonPath, "utf8")) as {
     mcpServers?: Record<string, { url: string; headers?: Record<string, string> }>;
   };
@@ -179,10 +183,12 @@ let discoveredTools: Map<string, string> | null = null;
  * Cached after first call.
  */
 export async function discoverTools(): Promise<Map<string, string>> {
-  if (discoveredTools) return discoveredTools;
-
+  // Load config first — if mcp.json changed on disk, loadMcpServerConfig drops
+  // the discovery cache, so this must run before the early return below.
   const serverName = getAutoMemMcpServerName();
   const cfg = loadMcpServerConfig(serverName);
+
+  if (discoveredTools) return discoveredTools;
 
   const body = {
     jsonrpc: "2.0",
