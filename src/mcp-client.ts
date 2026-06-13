@@ -29,7 +29,15 @@ export interface McpHealth {
 // MCP config reader
 // ---------------------------------------------------------------------------
 
+// Cache the parsed server config per server name — mcp.json rarely changes
+// within a session, and this is on the per-turn recall hot path. Invalidated
+// when the configured server name changes (setAutoMemMcpServerName).
+let mcpConfigCache: Map<string, { url: string; auth: string }> = new Map();
+
 function loadMcpServerConfig(serverName: string): { url: string; auth: string } {
+  const cached = mcpConfigCache.get(serverName);
+  if (cached) return cached;
+
   const mcpJsonPath = resolve(homedir(), ".pi", "agent", "mcp.json");
 
   if (!existsSync(mcpJsonPath)) {
@@ -46,10 +54,12 @@ function loadMcpServerConfig(serverName: string): { url: string; auth: string } 
     throw new Error('MCP server "' + serverName + '" not found. Available: ' + available);
   }
 
-  return {
+  const entry = {
     url: server.url,
     auth: resolveEnvVars(server.headers?.Authorization || ""),
   };
+  mcpConfigCache.set(serverName, entry);
+  return entry;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +94,7 @@ export function setAutoMemMcpServerName(serverName: string | undefined): void {
     const newName = serverName.trim();
     if (newName !== configuredServerName) {
       discoveredTools = null;
+      mcpConfigCache = new Map();
       configuredServerName = newName;
     }
   }
@@ -93,7 +104,11 @@ function getAutoMemMcpServerName(): string {
   return process.env.AUTOMEM_MCP_SERVER || configuredServerName || "automem";
 }
 
-async function mcpCall(tool: string, args: Record<string, unknown>): Promise<McpCallResult> {
+async function mcpCall(
+  tool: string,
+  args: Record<string, unknown>,
+  timeoutMs: number = 30000,
+): Promise<McpCallResult> {
   const serverName = getAutoMemMcpServerName();
   const cfg = loadMcpServerConfig(serverName);
 
@@ -105,7 +120,7 @@ async function mcpCall(tool: string, args: Record<string, unknown>): Promise<Mcp
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const resp = await fetch(cfg.url, {
@@ -133,7 +148,15 @@ async function mcpCall(tool: string, args: Record<string, unknown>): Promise<Mcp
       throw new Error("MCP error: " + payload.error.message);
     }
 
-    return payload.result || { content: [] };
+    const result = payload.result || { content: [] };
+    // A tool-level failure is reported as HTTP 200 with isError:true (no
+    // JSON-RPC error). Surface it as a thrown error so callers don't treat a
+    // failed health check / store / update as success.
+    if (result.isError) {
+      const errText = result.content && result.content[0] ? result.content[0].text : undefined;
+      throw new Error("MCP tool error: " + (errText || "tool reported isError"));
+    }
+    return result;
   } finally {
     clearTimeout(timeout);
   }
@@ -253,6 +276,7 @@ export async function automemRecall(
     expandRelations?: boolean;
     expandEntities?: boolean;
   },
+  timeoutMs?: number,
 ): Promise<McpCallResult> {
   const args: Record<string, unknown> = {
     query,
@@ -267,7 +291,7 @@ export async function automemRecall(
     args.context_types = options.contextTypes;
   }
 
-  return mcpCall(resolveToolName("recall_memory"), args);
+  return mcpCall(resolveToolName("recall_memory"), args, timeoutMs);
 }
 
 export async function automemHealth(): Promise<McpHealth> {

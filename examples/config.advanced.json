@@ -18,7 +18,8 @@
     "maxBytes": 3000,
     "contextTypes": ["Preference", "Decision", "Pattern", "Insight", "Context"],
     "expandRelations": true,
-    "expandEntities": true
+    "expandEntities": true,
+    "timeoutMs": 8000
   },
   "projectDetection": {
     "tagPrefix": "project:",

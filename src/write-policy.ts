@@ -45,7 +45,13 @@ export function normalizeCandidate(input: MemoryCandidate, config: AutoMemConfig
 export function evaluateWritePolicy(input: MemoryCandidate, config: AutoMemConfig): PolicyDecision {
   const normalized = normalizeCandidate(input, config);
   const reasons: string[] = [];
-  const findings = scanForSecrets(normalized.content + "\n" + normalized.tags.join("\n"));
+  // Scan content, tags, AND metadata — metadata is model-supplied (Type.Any)
+  // and is stored verbatim, so a secret placed there must not bypass the scan.
+  let metadataText = "";
+  if (normalized.metadata) {
+    try { metadataText = "\n" + JSON.stringify(normalized.metadata); } catch (_e) { /* unserializable */ }
+  }
+  const findings = scanForSecrets(normalized.content + "\n" + normalized.tags.join("\n") + metadataText);
   const mode = ((config.writePolicy as any).mode || "propose") as WriteMode;
   const preferredMax = config.behavior.preferredContentLength || 500;
   const hardMax = config.behavior.maxContentLength || 2000;

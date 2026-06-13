@@ -130,7 +130,10 @@ export function parseSearchResults(text: string): FormattedMemory[] {
   return memories;
 }
 
-function formatMemoriesForContext(memories: FormattedMemory[], maxBytes: number): string {
+function formatMemoriesForContext(
+  memories: FormattedMemory[],
+  maxBytes: number,
+): { text: string; included: number } {
   const lines: string[] = [];
   let bytes = 0;
 
@@ -148,7 +151,7 @@ function formatMemoriesForContext(memories: FormattedMemory[], maxBytes: number)
     bytes += entryBytes;
   }
 
-  return lines.join("\n");
+  return { text: lines.join("\n"), included: lines.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,7 +189,9 @@ export async function startupRecall(config: AutoMemConfig): Promise<RecallResult
           seenIds.add(mem.id);
           allMemories.push(mem);
         } else if (!mem.id) {
-          const key = mem.content.slice(0, 80);
+          // Namespace content keys so an id-less memory's prefix can't collide
+          // with a real memory id in the same set.
+          const key = "content:" + mem.content.slice(0, 80);
           if (!seenIds.has(key)) {
             seenIds.add(key);
             allMemories.push(mem);
@@ -199,8 +204,8 @@ export async function startupRecall(config: AutoMemConfig): Promise<RecallResult
   }
 
   const maxBytes = config.startupRecall.maxBytes;
-  const text = formatMemoriesForContext(allMemories, maxBytes);
-  const truncated = Buffer.byteLength(text, "utf8") >= maxBytes && allMemories.length > 0;
+  const { text, included } = formatMemoriesForContext(allMemories, maxBytes);
+  const truncated = included < allMemories.length;
 
   return { text, count: allMemories.length, truncated };
 }
@@ -224,7 +229,10 @@ export async function turnRecall(
 
   const tags: string[] = [];
   if (project.projectTag) {
-    tags.push(project.projectTag);
+    // Match the write path: normalizeCandidate lowercases all tags, so the
+    // recall tag filter must lowercase too or tag matching (default: exact)
+    // will miss memories this extension stored.
+    tags.push(project.projectTag.trim().toLowerCase());
   }
 
   const recallConfig = (project.projectTag && config.projectOverrides && config.projectOverrides[project.projectTag])
@@ -239,12 +247,12 @@ export async function turnRecall(
       contextTypes: recallConfig.contextTypes as unknown as string[],
       expandRelations: recallConfig.expandRelations,
       expandEntities: recallConfig.expandEntities,
-    });
+    }, config.turnRecall.timeoutMs);
 
     const text = result.content && result.content[0] ? result.content[0].text || "" : "";
     const memories = parseSearchResults(text);
-    const formatted = formatMemoriesForContext(memories, recallConfig.maxBytes);
-    const truncated = Buffer.byteLength(formatted, "utf8") >= recallConfig.maxBytes && memories.length > 0;
+    const { text: formatted, included } = formatMemoriesForContext(memories, recallConfig.maxBytes);
+    const truncated = included < memories.length;
 
     return { text: formatted, count: memories.length, truncated };
   } catch (err) {

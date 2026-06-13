@@ -58,6 +58,7 @@ export interface AutoMemConfig {
     contextTypes: MemoryType[];
     expandRelations: boolean;
     expandEntities: boolean;
+    timeoutMs: number;
   };
   projectDetection: {
     enabled: boolean;
@@ -113,6 +114,10 @@ export const DEFAULT_CONFIG: AutoMemConfig = {
     contextTypes: ["Preference", "Decision", "Pattern", "Insight", "Context"],
     expandRelations: true,
     expandEntities: true,
+    // Turn recall is best-effort enrichment on the prompt hot path; bound it
+    // tightly so a slow/stalled sidecar can't block every prompt for the full
+    // 30s MCP timeout. Recall failure degrades gracefully to no injection.
+    timeoutMs: 8000,
   },
   projectDetection: {
     enabled: true,
@@ -179,6 +184,8 @@ function deepMerge(base: any, override: any): any {
   const keys = Object.keys(override);
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
+    // Never merge prototype-mutating keys from an untrusted config file.
+    if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
     const bVal = (base as any)[key];
     const oVal = override[key];
     if (
