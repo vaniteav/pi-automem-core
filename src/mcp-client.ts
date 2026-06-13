@@ -5,7 +5,7 @@
  * All calls go through the MCP tools/call endpoint.
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { resolveEnvVars } from "./config";
@@ -29,20 +29,24 @@ export interface McpHealth {
 // MCP config reader
 // ---------------------------------------------------------------------------
 
-// Cache the parsed server config per server name — mcp.json rarely changes
-// within a session, and this is on the per-turn recall hot path. Invalidated
-// when the configured server name changes (setAutoMemMcpServerName).
-let mcpConfigCache: Map<string, { url: string; auth: string }> = new Map();
+// Cache the parsed server config per server name to keep readFileSync + JSON
+// parse off the per-turn recall hot path. The cache is gated on the file's
+// mtime (a cheap stat), so an in-place mcp.json edit is still picked up.
+interface CachedServerConfig { url: string; auth: string; mtimeMs: number }
+let mcpConfigCache: Map<string, CachedServerConfig> = new Map();
 
-function loadMcpServerConfig(serverName: string): { url: string; auth: string } {
-  const cached = mcpConfigCache.get(serverName);
-  if (cached) return cached;
-
+function loadMcpServerConfig(serverName: string): CachedServerConfig {
   const mcpJsonPath = resolve(homedir(), ".pi", "agent", "mcp.json");
 
   if (!existsSync(mcpJsonPath)) {
     throw new Error("mcp.json not found at " + mcpJsonPath);
   }
+
+  let mtimeMs = 0;
+  try { mtimeMs = statSync(mcpJsonPath).mtimeMs; } catch (_e) { /* fall through to read */ }
+
+  const cached = mcpConfigCache.get(serverName);
+  if (cached && cached.mtimeMs === mtimeMs) return cached;
 
   const mcpJson = JSON.parse(readFileSync(mcpJsonPath, "utf8")) as {
     mcpServers?: Record<string, { url: string; headers?: Record<string, string> }>;
@@ -54,9 +58,10 @@ function loadMcpServerConfig(serverName: string): { url: string; auth: string } 
     throw new Error('MCP server "' + serverName + '" not found. Available: ' + available);
   }
 
-  const entry = {
+  const entry: CachedServerConfig = {
     url: server.url,
     auth: resolveEnvVars(server.headers?.Authorization || ""),
+    mtimeMs,
   };
   mcpConfigCache.set(serverName, entry);
   return entry;
@@ -337,8 +342,8 @@ export async function automemStore(
     content,
     type,
     tags,
-    confidence: options && options.confidence ? options.confidence : 0.8,
-    importance: options && options.importance ? options.importance : 0.5,
+    confidence: options?.confidence ?? 0.8,
+    importance: options?.importance ?? 0.5,
     metadata: Object.keys(meta).length > 0 ? meta : undefined,
   });
 }

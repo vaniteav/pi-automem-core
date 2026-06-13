@@ -50,6 +50,7 @@ export interface AutoMemConfig {
     limit: number;
     maxBytes: number;
     showStatus: boolean;
+    timeoutMs: number;
   };
   turnRecall: {
     enabled: boolean;
@@ -106,6 +107,9 @@ export const DEFAULT_CONFIG: AutoMemConfig = {
     limit: 8,
     maxBytes: 6000,
     showStatus: true,
+    // Bound startup recall so an unreachable sidecar can't stall session start
+    // for the full 30s MCP timeout per query.
+    timeoutMs: 15000,
   },
   turnRecall: {
     enabled: true,

@@ -5,7 +5,7 @@
 Patch release with reliability and performance refinements.
 
 ### Added
-- `turnRecall.timeoutMs` config option (default `8000`) to bound turn-recall latency.
+- `turnRecall.timeoutMs` (default `8000`) and `startupRecall.timeoutMs` (default `15000`) config options to bound recall latency. All recall calls (startup, turn, dedupe) now use these short timeouts so a slow sidecar can't stall on the full 30s MCP timeout.
 
 ### Improved
 - Secret scanning now also covers memory `metadata`.
@@ -13,9 +13,10 @@ Patch release with reliability and performance refinements.
 - MCP tool-level errors now surface accurately in health checks and writes.
 - Recall tag filtering matches the casing used when writing tags.
 - `automem_correct_memory` normalizes stored content like the other write tools.
-- The `truncated` flag now reflects when recall results are trimmed to fit the byte budget.
+- Recall results are kept within the configured byte budget (oversized single memories are trimmed), and the `truncated` flag reflects it.
+- Explicit `0` importance/confidence values are now preserved on write instead of being replaced by defaults.
 - Project detection checks all configured git remotes.
-- `mcp.json` is cached per server instead of re-read on every call.
+- `mcp.json` is cached (and refreshed when it changes on disk) instead of re-read on every call.
 
 ### Fixed
 - Corrected the `npm test` script paths.

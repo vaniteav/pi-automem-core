@@ -271,7 +271,7 @@ async function recallSimilarWithMatches(query: string, tags: string[], config: a
     contextTypes: ["Decision", "Pattern", "Preference", "Style", "Habit", "Insight", "Context"],
     expandRelations: false,
     expandEntities: false,
-  });
+  }, config.turnRecall?.timeoutMs);
   const text = result.content?.[0]?.text || "No similar memories found.";
   const parsed = parseSearchResults(text);
   const matches = parsed
