@@ -1,6 +1,6 @@
 {
   "name": "pi-automem-bridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Automatic long-term memory recall and policy-gated writes for pi agents via AutoMem MCP",
   "keywords": [
     "pi-package",
@@ -25,9 +25,9 @@
     "typebox": "*"
   },
   "scripts": {
-    "test": "tsx tests/unit.ts && tsx tests/write-policy.ts",
-    "test:smoke": "tsx tests/smoke.ts",
-    "test:live": "tsx tests/live-write.ts"
+    "test": "tsx tests/unit.ts && tsx tests/phase2-policy.ts && tsx tests/review-fixes.ts",
+    "test:smoke": "tsx tests/phase1-smoke.ts",
+    "test:live": "tsx tests/phase2-live-write.ts"
   },
   "devDependencies": {
     "tsx": "^4.20.6"

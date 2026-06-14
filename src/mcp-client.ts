@@ -5,7 +5,7 @@
  * All calls go through the MCP tools/call endpoint.
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { resolveEnvVars } from "./config";
@@ -29,12 +29,33 @@ export interface McpHealth {
 // MCP config reader
 // ---------------------------------------------------------------------------
 
-function loadMcpServerConfig(serverName: string): { url: string; auth: string } {
+// Cache the parsed server config per server name to keep readFileSync + JSON
+// parse off the per-turn recall hot path. The cache is validated against a
+// cheap stat signature (mtime + size — the same quick-check make/rsync use), so
+// an in-place mcp.json edit is still picked up even within a single mtime tick.
+// An empty signature (stat failed) never matches, forcing a fresh read.
+interface CachedServerConfig { url: string; auth: string; signature: string }
+let mcpConfigCache: Map<string, CachedServerConfig> = new Map();
+
+function loadMcpServerConfig(serverName: string): CachedServerConfig {
   const mcpJsonPath = resolve(homedir(), ".pi", "agent", "mcp.json");
 
   if (!existsSync(mcpJsonPath)) {
     throw new Error("mcp.json not found at " + mcpJsonPath);
   }
+
+  let signature = "";
+  try {
+    const st = statSync(mcpJsonPath);
+    signature = st.mtimeMs + ":" + st.size;
+  } catch (_e) { /* leave signature empty so the cache is bypassed */ }
+
+  const cached = mcpConfigCache.get(serverName);
+  if (cached && signature !== "" && cached.signature === signature) return cached;
+
+  // The file changed on disk (or the stat failed). The endpoint may now expose
+  // different tools, so drop the discovery cache too.
+  if (cached) discoveredTools = null;
 
   const mcpJson = JSON.parse(readFileSync(mcpJsonPath, "utf8")) as {
     mcpServers?: Record<string, { url: string; headers?: Record<string, string> }>;
@@ -46,10 +67,13 @@ function loadMcpServerConfig(serverName: string): { url: string; auth: string } 
     throw new Error('MCP server "' + serverName + '" not found. Available: ' + available);
   }
 
-  return {
+  const entry: CachedServerConfig = {
     url: server.url,
     auth: resolveEnvVars(server.headers?.Authorization || ""),
+    signature,
   };
+  mcpConfigCache.set(serverName, entry);
+  return entry;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +108,7 @@ export function setAutoMemMcpServerName(serverName: string | undefined): void {
     const newName = serverName.trim();
     if (newName !== configuredServerName) {
       discoveredTools = null;
+      mcpConfigCache = new Map();
       configuredServerName = newName;
     }
   }
@@ -93,7 +118,11 @@ function getAutoMemMcpServerName(): string {
   return process.env.AUTOMEM_MCP_SERVER || configuredServerName || "automem";
 }
 
-async function mcpCall(tool: string, args: Record<string, unknown>): Promise<McpCallResult> {
+async function mcpCall(
+  tool: string,
+  args: Record<string, unknown>,
+  timeoutMs: number = 30000,
+): Promise<McpCallResult> {
   const serverName = getAutoMemMcpServerName();
   const cfg = loadMcpServerConfig(serverName);
 
@@ -105,7 +134,7 @@ async function mcpCall(tool: string, args: Record<string, unknown>): Promise<Mcp
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const resp = await fetch(cfg.url, {
@@ -133,7 +162,15 @@ async function mcpCall(tool: string, args: Record<string, unknown>): Promise<Mcp
       throw new Error("MCP error: " + payload.error.message);
     }
 
-    return payload.result || { content: [] };
+    const result = payload.result || { content: [] };
+    // A tool-level failure is reported as HTTP 200 with isError:true (no
+    // JSON-RPC error). Surface it as a thrown error so callers don't treat a
+    // failed health check / store / update as success.
+    if (result.isError) {
+      const errText = result.content && result.content[0] ? result.content[0].text : undefined;
+      throw new Error("MCP tool error: " + (errText || "tool reported isError"));
+    }
+    return result;
   } finally {
     clearTimeout(timeout);
   }
@@ -151,10 +188,12 @@ let discoveredTools: Map<string, string> | null = null;
  * Cached after first call.
  */
 export async function discoverTools(): Promise<Map<string, string>> {
-  if (discoveredTools) return discoveredTools;
-
+  // Load config first — if mcp.json changed on disk, loadMcpServerConfig drops
+  // the discovery cache, so this must run before the early return below.
   const serverName = getAutoMemMcpServerName();
   const cfg = loadMcpServerConfig(serverName);
+
+  if (discoveredTools) return discoveredTools;
 
   const body = {
     jsonrpc: "2.0",
@@ -253,6 +292,7 @@ export async function automemRecall(
     expandRelations?: boolean;
     expandEntities?: boolean;
   },
+  timeoutMs?: number,
 ): Promise<McpCallResult> {
   const args: Record<string, unknown> = {
     query,
@@ -267,7 +307,7 @@ export async function automemRecall(
     args.context_types = options.contextTypes;
   }
 
-  return mcpCall(resolveToolName("recall_memory"), args);
+  return mcpCall(resolveToolName("recall_memory"), args, timeoutMs);
 }
 
 export async function automemHealth(): Promise<McpHealth> {
@@ -313,8 +353,8 @@ export async function automemStore(
     content,
     type,
     tags,
-    confidence: options && options.confidence ? options.confidence : 0.8,
-    importance: options && options.importance ? options.importance : 0.5,
+    confidence: options?.confidence ?? 0.8,
+    importance: options?.importance ?? 0.5,
     metadata: Object.keys(meta).length > 0 ? meta : undefined,
   });
 }

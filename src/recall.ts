@@ -130,9 +130,25 @@ export function parseSearchResults(text: string): FormattedMemory[] {
   return memories;
 }
 
-function formatMemoriesForContext(memories: FormattedMemory[], maxBytes: number): string {
+function truncateToBytes(value: string, maxBytes: number): string {
+  if (Buffer.byteLength(value, "utf8") <= maxBytes) return value;
+  let lo = 0;
+  let hi = value.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (Buffer.byteLength(value.slice(0, mid), "utf8") <= maxBytes) lo = mid;
+    else hi = mid - 1;
+  }
+  return value.slice(0, lo);
+}
+
+function formatMemoriesForContext(
+  memories: FormattedMemory[],
+  maxBytes: number,
+): { text: string; included: number; overflowed: boolean } {
   const lines: string[] = [];
   let bytes = 0;
+  let overflowed = false;
 
   for (let i = 0; i < memories.length; i++) {
     const mem = memories[i];
@@ -144,11 +160,19 @@ function formatMemoriesForContext(memories: FormattedMemory[], maxBytes: number)
       break;
     }
 
+    // A single memory larger than the whole budget must not be passed through
+    // verbatim — truncate it to fit and flag the result as truncated.
+    if (lines.length === 0 && entryBytes > maxBytes) {
+      lines.push(truncateToBytes(entry, maxBytes));
+      overflowed = true;
+      break;
+    }
+
     lines.push(entry);
     bytes += entryBytes;
   }
 
-  return lines.join("\n");
+  return { text: lines.join("\n"), included: lines.length, overflowed };
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +200,7 @@ export async function startupRecall(config: AutoMemConfig): Promise<RecallResult
         limit: config.startupRecall.limit,
         tags: config.startupRecall.tags,
         tagMode: config.startupRecall.tagMode,
-      });
+      }, config.startupRecall.timeoutMs);
 
       const text = result.content && result.content[0] ? result.content[0].text || "" : "";
       const memories = parseSearchResults(text);
@@ -186,7 +210,9 @@ export async function startupRecall(config: AutoMemConfig): Promise<RecallResult
           seenIds.add(mem.id);
           allMemories.push(mem);
         } else if (!mem.id) {
-          const key = mem.content.slice(0, 80);
+          // Namespace content keys so an id-less memory's prefix can't collide
+          // with a real memory id in the same set.
+          const key = "content:" + mem.content.slice(0, 80);
           if (!seenIds.has(key)) {
             seenIds.add(key);
             allMemories.push(mem);
@@ -199,8 +225,8 @@ export async function startupRecall(config: AutoMemConfig): Promise<RecallResult
   }
 
   const maxBytes = config.startupRecall.maxBytes;
-  const text = formatMemoriesForContext(allMemories, maxBytes);
-  const truncated = Buffer.byteLength(text, "utf8") >= maxBytes && allMemories.length > 0;
+  const { text, included, overflowed } = formatMemoriesForContext(allMemories, maxBytes);
+  const truncated = included < allMemories.length || overflowed;
 
   return { text, count: allMemories.length, truncated };
 }
@@ -224,7 +250,10 @@ export async function turnRecall(
 
   const tags: string[] = [];
   if (project.projectTag) {
-    tags.push(project.projectTag);
+    // Match the write path: normalizeCandidate lowercases all tags, so the
+    // recall tag filter must lowercase too or tag matching (default: exact)
+    // will miss memories this extension stored.
+    tags.push(project.projectTag.trim().toLowerCase());
   }
 
   const recallConfig = (project.projectTag && config.projectOverrides && config.projectOverrides[project.projectTag])
@@ -239,12 +268,12 @@ export async function turnRecall(
       contextTypes: recallConfig.contextTypes as unknown as string[],
       expandRelations: recallConfig.expandRelations,
       expandEntities: recallConfig.expandEntities,
-    });
+    }, config.turnRecall.timeoutMs);
 
     const text = result.content && result.content[0] ? result.content[0].text || "" : "";
     const memories = parseSearchResults(text);
-    const formatted = formatMemoriesForContext(memories, recallConfig.maxBytes);
-    const truncated = Buffer.byteLength(formatted, "utf8") >= recallConfig.maxBytes && memories.length > 0;
+    const { text: formatted, included, overflowed } = formatMemoriesForContext(memories, recallConfig.maxBytes);
+    const truncated = included < memories.length || overflowed;
 
     return { text: formatted, count: memories.length, truncated };
   } catch (err) {

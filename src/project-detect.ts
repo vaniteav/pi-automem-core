@@ -19,13 +19,15 @@ function detectFromGit(cwd: string, gitRepoToTag: Record<string, string>): Proje
     if (existsSync(gitConfigPath)) {
       try {
         const gitConfig = readFileSync(gitConfigPath, "utf8");
-        const urlMatch = gitConfig.match(/\[remote "[^"]+"\][\s\S]*?url\s*=\s*(.+)/);
-        if (urlMatch) {
-          const remoteUrl = urlMatch[1].trim().toLowerCase();
-          const keys = Object.keys(gitRepoToTag);
+        // Examine every remote url, not just the first — a repo's configured
+        // tag may match a non-first remote (e.g. `upstream`).
+        const remoteUrls = Array.from(gitConfig.matchAll(/^\s*url\s*=\s*(.+)$/gim))
+          .map(function(m) { return m[1].trim().toLowerCase(); });
+        const keys = Object.keys(gitRepoToTag);
+        for (let u = 0; u < remoteUrls.length; u++) {
           for (let i = 0; i < keys.length; i++) {
             const substring = keys[i].toLowerCase();
-            if (remoteUrl.indexOf(substring) !== -1) {
+            if (remoteUrls[u].indexOf(substring) !== -1) {
               const tag = gitRepoToTag[keys[i]];
               return { projectTag: tag, projectLabel: tag.replace(/^[^:]+:/, "") };
             }

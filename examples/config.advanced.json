@@ -10,7 +10,8 @@
     "tags": ["source:pi"],
     "tagMode": "any",
     "limit": 6,
-    "maxBytes": 5000
+    "maxBytes": 5000,
+    "timeoutMs": 15000
   },
   "turnRecall": {
     "enabled": true,
@@ -18,7 +19,8 @@
     "maxBytes": 3000,
     "contextTypes": ["Preference", "Decision", "Pattern", "Insight", "Context"],
     "expandRelations": true,
-    "expandEntities": true
+    "expandEntities": true,
+    "timeoutMs": 8000
   },
   "projectDetection": {
     "tagPrefix": "project:",

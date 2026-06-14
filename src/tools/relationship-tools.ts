@@ -83,11 +83,18 @@ export function registerRelationshipTools(pi: ExtensionAPI) {
       }
 
       const rel = params.relationship === "CONTRADICTS" ? "CONTRADICTS" : "EVOLVED_INTO";
+      // Store the normalized candidate so corrections get the same alwaysTag,
+      // source, and content normalization as every other write path.
       const storeResult = await automemStore(
-        params.correction,
-        params.type || "Context",
-        Array.isArray(params.tags) ? params.tags : [],
-        { importance: params.importance },
+        decision.normalized.content,
+        decision.normalized.type,
+        decision.normalized.tags,
+        {
+          source: decision.normalized.source,
+          importance: decision.normalized.importance,
+          confidence: decision.normalized.confidence,
+          metadata: decision.normalized.metadata,
+        },
       );
 
       const storeText = storeResult.content?.[0]?.text || "";
