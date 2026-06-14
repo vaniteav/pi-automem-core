@@ -67,6 +67,31 @@ try {
   else pass("CHANGELOG.md documents " + pkg.version);
 } catch { fail("could not read CHANGELOG.md"); }
 
+// 3b. README updated since the last release ----------------------------------
+// npm displays the PUBLISHED version's README, so a release that changes
+// behavior must ship an updated README in the same publish — not after.
+try {
+  // Compare against the most recent tag that ISN'T HEAD, so this works whether
+  // the release commit is tagged before or after publish.
+  const head = sh("git rev-parse HEAD");
+  let baseTag = "";
+  let tags = [];
+  try { tags = sh("git tag --sort=-creatordate").split("\n").filter(Boolean); } catch { /* no tags */ }
+  for (const t of tags) {
+    if (sh("git rev-list -n1 " + t) !== head) { baseTag = t; break; }
+  }
+  if (!baseTag) {
+    pass("README freshness skipped (no prior release tag)");
+  } else {
+    const changed = sh("git diff --name-only " + baseTag + "..HEAD").split("\n");
+    if (changed.includes("README.md")) pass("README.md updated since " + baseTag);
+    else if (process.env.ALLOW_STALE_README === "1")
+      console.log("  ~ README.md unchanged since " + baseTag + " (ALLOW_STALE_README=1 override)");
+    else fail("README.md not updated since " + baseTag + " — npm shows the published README. " +
+      "Update it, or set ALLOW_STALE_README=1 if this release genuinely needs no README change.");
+  }
+} catch (e) { fail("could not check README freshness: " + e.message); }
+
 // 4. Version is not already published -----------------------------------------
 try {
   const published = sh("npm view " + pkg.name + " version");

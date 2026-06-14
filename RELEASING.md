@@ -15,12 +15,16 @@ order below; the gate is the backstop, not a substitute for it.
 1. **Working tree is clean** — no uncommitted changes.
 2. **HEAD commit email is privacy-safe** — a GitHub noreply, never a personal email.
 3. **CHANGELOG has a `## <version>` entry** matching `package.json`.
-4. **Version is not already published** — forces a bump.
-5. **Tarball is src-only** — no `tests/`, `scripts/`, `RELEASING.md`, `docs/`, etc.
-6. **No secrets / PII in any shipped file** — scans the actual tarball contents
+4. **README updated since the last release** — npm shows the *published* README,
+   so behavior changes must ship an updated README in the same publish, not
+   after. (Override `ALLOW_STALE_README=1` only when a release genuinely needs no
+   README change.)
+5. **Version is not already published** — forces a bump.
+6. **Tarball is src-only** — no `tests/`, `scripts/`, `RELEASING.md`, `docs/`, etc.
+7. **No secrets / PII in any shipped file** — scans the actual tarball contents
    (personal email, real name/username, real paths, Railway/AutoMem-prod URLs,
    hostnames, API keys, tokens, private keys, literal bearer tokens).
-7. **Offline test suite is green.**
+8. **Offline test suite is green.**
 
 Run it manually any time: `npm run preflight`.
 
@@ -38,9 +42,11 @@ Run it manually any time: `npm run preflight`.
 3. **Bump the version** in `package.json` per SemVer (patch = fixes, minor =
    features, major = breaking), then `npm install --package-lock-only`.
 
-4. **Update `CHANGELOG.md`** — new dated section at the top using Keep a
-   Changelog headings in order: `Added`, `Changed`, `Deprecated`, `Removed`,
-   `Fixed`, `Security` (only the ones that apply).
+4. **Update `CHANGELOG.md` AND `README.md` together.** Changelog: new dated
+   section at the top using Keep a Changelog headings in order (`Added`,
+   `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security` — only the ones that
+   apply). README: reflect any new/changed config, tools, commands, or behavior
+   **before** publishing — npm displays the published version's README.
 
 5. **Commit** the bump + changelog (`Release vX.Y.Z`).
 
