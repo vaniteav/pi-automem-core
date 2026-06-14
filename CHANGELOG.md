@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2 — 2026-06-13
+
+### Changed
+- Documentation only: the npm README now documents the recall-timeout options added in 0.2.1 (`turnRecall.timeoutMs`, `startupRecall.timeoutMs`). No runtime changes — this release republishes the current README to npm.
+
 ## 0.2.1 — 2026-06-13
 
 Patch release with reliability and performance refinements.
