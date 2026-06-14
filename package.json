@@ -27,7 +27,9 @@
   "scripts": {
     "test": "tsx tests/unit.ts && tsx tests/phase2-policy.ts && tsx tests/review-fixes.ts",
     "test:smoke": "tsx tests/phase1-smoke.ts",
-    "test:live": "tsx tests/phase2-live-write.ts"
+    "test:live": "tsx tests/phase2-live-write.ts",
+    "preflight": "node scripts/preflight.mjs",
+    "prepublishOnly": "node scripts/preflight.mjs"
   },
   "devDependencies": {
     "tsx": "^4.20.6"

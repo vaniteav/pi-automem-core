@@ -1,77 +1,85 @@
 # Releasing
 
-How to cut a release of `pi-automem-bridge`. This package is published to npm
-and installed into pi via `pi install npm:pi-automem-bridge`.
+How to cut a release of `pi-automem-bridge` **in order, with nothing caught after ship.**
 
-## Principles
+The hard-won lesson: a checklist you have to *remember* gets done out of order and
+things slip through both before and after publish. So the critical checks are
+**enforced by a gate** (`scripts/preflight.mjs`), wired into `prepublishOnly` —
+**`npm publish` physically cannot run unless every gate passes.** Follow the
+order below; the gate is the backstop, not a substitute for it.
 
-- **Notifications are pull + opt-in, by design.** The package never phones home,
-  prints update notices, or runs network calls on load — that is an anti-pattern
-  for a library/extension. Users learn about updates through SemVer, the
-  changelog, and GitHub Releases (Watch → Releases, or the `releases.atom` feed),
-  not through code baked into the package.
-- **SemVer.** Patch = backward-compatible fixes; minor = backward-compatible
-  features; major = breaking changes.
-- **Tests never ship to npm.** They live in the repo (so the suite is runnable
-  from a clone) but are excluded from the published tarball by the `files`
-  allowlist in `package.json`. Always confirm with `npm pack --dry-run`.
+## What the gate enforces (automatic, on every `npm publish`)
 
-## Steps
+`npm run preflight` (and `prepublishOnly`) blocks the release unless ALL pass:
 
-1. **Green check.** On a clean working tree:
-   ```bash
-   npm test            # unit + phase2-policy + review-fixes (offline)
-   ```
-   (Optional, needs a live AutoMem instance: `npm run test:smoke`, `npm run test:live`.)
+1. **Working tree is clean** — no uncommitted changes.
+2. **HEAD commit email is privacy-safe** — a GitHub noreply, never a personal email.
+3. **CHANGELOG has a `## <version>` entry** matching `package.json`.
+4. **Version is not already published** — forces a bump.
+5. **Tarball is src-only** — no `tests/`, `scripts/`, `RELEASING.md`, `docs/`, etc.
+6. **No secrets / PII in any shipped file** — scans the actual tarball contents
+   (personal email, real name/username, real paths, Railway/AutoMem-prod URLs,
+   hostnames, API keys, tokens, private keys, literal bearer tokens).
+7. **Offline test suite is green.**
 
-2. **Bump the version** in `package.json` per SemVer, then sync the lockfile:
-   ```bash
-   npm install --package-lock-only
-   ```
+Run it manually any time: `npm run preflight`.
 
-3. **Update `CHANGELOG.md`.** Add a new dated section at the top using the
-   Keep a Changelog headings in order: `Added`, `Changed`, `Deprecated`,
-   `Removed`, `Fixed`, `Security` (include only the ones that apply).
+## Release steps (in order)
 
-4. **Commit** the version bump + changelog:
-   ```bash
-   git commit -am "Release vX.Y.Z"
-   ```
+1. **Branch + implement** the change. Commit per logical unit. Confirm your git
+   email is a noreply (`git config user.email` → `…@users.noreply.github.com`).
 
-5. **Merge to `main`.** Prefer a merge that preserves the released commit
-   (`--no-ff` or fast-forward) so the tag below lands on a commit that stays on
-   `main`. If you squash-merge, create the tag on the squashed commit instead.
+2. **External review BEFORE the costly step.** Run a fresh Codex review over the
+   whole branch (`/codex:rescue`, `--fresh --wait`). Fix findings TDD and
+   re-review to APPROVE. This is the layer that catches the cross-file and
+   "regression I introduced while fixing" classes — it belongs *before* tag and
+   publish, not after.
 
-6. **Verify the tarball** is source-only (no tests, no internal docs):
-   ```bash
-   npm pack --dry-run
-   ```
+3. **Bump the version** in `package.json` per SemVer (patch = fixes, minor =
+   features, major = breaking), then `npm install --package-lock-only`.
 
-7. **Tag the released commit** (annotated):
-   ```bash
-   git tag -a vX.Y.Z -m "vX.Y.Z"
-   ```
+4. **Update `CHANGELOG.md`** — new dated section at the top using Keep a
+   Changelog headings in order: `Added`, `Changed`, `Deprecated`, `Removed`,
+   `Fixed`, `Security` (only the ones that apply).
 
-8. **Publish to npm:**
-   ```bash
-   npm publish
-   ```
-   (Requires `npm login` as the publishing account. Never use `--ignore-scripts`
-   bypasses or commit npm tokens.)
+5. **Commit** the bump + changelog (`Release vX.Y.Z`).
 
-9. **Push with the tag:**
-   ```bash
-   git push origin main --follow-tags
-   ```
+6. **Dry-run the gate:** `npm run preflight`. Fix anything it flags. Do not
+   proceed until it prints "Preflight passed."
 
-10. **Cut a GitHub Release** from the new tag and paste that version's
-    `CHANGELOG.md` section as the release notes. This is what actually notifies
-    watchers (email/web) and populates the `releases.atom` feed.
+7. **Merge to `main`** with `--no-ff` (or fast-forward) so the released commit —
+   and the tag below — stays on `main`. If you squash-merge, tag the squashed
+   commit.
+
+8. **Tag the released commit:** `git tag -a vX.Y.Z -m "vX.Y.Z"`.
+
+9. **Publish:** `npm publish`. The gate runs automatically via `prepublishOnly`;
+   if it fails, the publish aborts — fix and retry. (Requires `npm login`. Never
+   use `--ignore-scripts` to bypass the gate.)
+
+10. **Push with the tag:** `git push origin main --follow-tags`.
+
+11. **Cut a GitHub Release** from the new tag; paste that version's `CHANGELOG.md`
+    section as the notes. This is the channel that actively notifies watchers
+    (Watch → Releases) and the `releases.atom` feed.
+
+12. **Post-ship verify:** `npm view pi-automem-bridge version` shows the new
+    version; the GitHub Release page exists; `gh release view vX.Y.Z`.
 
 ## Notes
 
-- The README's npm-version and downloads badges reflect the published version
-  automatically — no action needed.
-- Downstream consumers who list this package in a scanned `package.json` may get
-  Dependabot/Renovate PRs automatically once the new version is on npm; pi-managed
-  installs generally will not, which is why the GitHub Release matters.
+- **Tests never ship to npm.** They're tracked in the repo (runnable from a
+  clone) but excluded from the tarball by the `files` allowlist — the gate
+  re-verifies this every publish.
+- **Notifications are pull + opt-in by design.** The package never phones home or
+  prints update notices (an anti-pattern for a library). Users update via
+  `pi update` (or `pi update npm:pi-automem-bridge`) and learn about releases
+  through SemVer, the changelog, and the GitHub Release.
+- **The README's npm copy only refreshes on the next publish.** A README edit is
+  live on GitHub immediately on push, but npm shows the README from the last
+  published version.
+- **Email privacy:** all commits use the GitHub noreply
+  (`273684110+vaniteav@users.noreply.github.com`); the gate fails the release if
+  HEAD exposes a personal email. To stop leaks at the source, enable GitHub
+  Settings → Emails → "Keep my email addresses private" + "Block command line
+  pushes that expose my email."
