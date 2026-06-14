@@ -152,14 +152,18 @@ Config file: `~/.pi/agent/automem.json` (or `AUTOMEM_CONFIG_PATH`)
 | Section | Purpose |
 |---|---|
 | `mcpServerName` | Which server in `mcp.json` to use |
-| `startupRecall` | Queries, tags, limits, byte budget for session-start recall |
-| `turnRecall` | Per-prompt recall: limits, memory types, relation/entity expansion |
+| `startupRecall` | Queries, tags, limits, byte budget, and timeout for session-start recall |
+| `turnRecall` | Per-prompt recall: limits, memory types, relation/entity expansion, and timeout |
 | `projectDetection` | Map git repos and folder names to project tags for scoped recall |
 | `projectOverrides` | Per-project overrides for turn recall limits and filters |
 | `writePolicy` | Write mode, categories, importance threshold, dedupe settings |
 | `behavior` | Display mode and content-length preferences |
 
 See [`examples/config.minimal.json`](examples/config.minimal.json) and [`examples/config.advanced.json`](examples/config.advanced.json).
+
+### Recall timeouts
+
+Recall is best-effort context enrichment, so it runs on a short, bounded timeout instead of the full MCP request timeout — a slow or unreachable AutoMem server degrades gracefully to no injection rather than blocking your prompt. Tune with `turnRecall.timeoutMs` (default `8000`) and `startupRecall.timeoutMs` (default `15000`).
 
 ---
 
